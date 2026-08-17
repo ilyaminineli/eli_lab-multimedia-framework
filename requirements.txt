@@ -1,6 +1,7 @@
-pip~=24.0
-setuptools~=68.0.0
-future~=1.0.0
-tkcalendar~=1.6.1
-python-magic~=0.4.27
-Pillow~=9.5.0
+# Runtime dependencies
+Pillow>=11.3,<13
+python-magic>=0.4.27,<0.5
+tkcalendar>=1.6.1,<2
+
+# Optional external tools
+# pngquant must be installed separately and available on PATH for texture optimization.
