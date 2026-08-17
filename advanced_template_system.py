@@ -1,276 +1,125 @@
-import os
+"""Legacy Tkinter adapter for the project template service."""
+
+from __future__ import annotations
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
+from pathlib import Path
+
+from eli_lab.project.structure import ProjectTemplate, create_project_structure
 
 
-class FolderAutomationApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Advanced Template System")
+class FolderAutomationApp(ttk.Frame):
+    """GUI-only adapter around ``eli_lab.project.structure``."""
 
+    def __init__(self, parent):
+        super().__init__(parent, padding=20)
         self.project_path = tk.StringVar()
         self.project_name = tk.StringVar()
-        self.characters = []
-        self.locations = {}
-        self.assets = {}
+        self.characters: list[str] = []
+        self.locations: dict[str, list[str]] = {}
+        self.assets: dict[str, list[str]] = {}
+        self.columnconfigure(1, weight=1)
+        self._build_ui()
 
-        # --- Style Configuration ---
-        style = ttk.Style()
-        style.theme_use('clam')
+    def _build_ui(self):
+        ttk.Label(self, text="Project Path:").grid(row=0, column=0, sticky="w")
+        ttk.Entry(self, textvariable=self.project_path).grid(row=0, column=1, sticky="ew", padx=5)
+        ttk.Button(self, text="Browse", command=self.browse_folder).grid(row=0, column=2)
 
-        # Font and Colors
-        font_name = "Bahnschrift"
-        bg_color = '#2e2e2e'
-        fg_color = 'white'
-        entry_bg_color = "#4a4a4a"
-        button_bg_color = '#4a4a4a'
-        button_active_bg_color = '#606060'
-        text_color = '#d3d3d3'
+        ttk.Label(self, text="Project Name:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(self, textvariable=self.project_name).grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 
-        # Configure Styles
-        style.configure('.', background=bg_color, foreground=fg_color, font=(font_name, 10))
-        style.configure('TLabel', background='#2e2e2e', foreground='white', padding=10, font=(font_name, 12, 'bold'))
-        style.configure('TButton', background=button_bg_color, foreground=fg_color, padding=8, relief='flat',
-                        font=(font_name, 11),
-                        borderwidth=0, focuscolor='gray',
-                        activebackground=button_active_bg_color, activeforeground=fg_color)
-        style.map('TButton',
-                  background=[('active', button_active_bg_color), ('disabled', button_bg_color)],
-                  foreground=[('disabled', 'gray')])
-        style.configure('TEntry', fieldbackground=entry_bg_color, foreground=text_color, font=(font_name, 11))
+        self.characters_frame = self._section("Characters", 2, self.characters, self.add_character, self.delete_character)
+        self.locations_frame = self._section("Locations", 3, self.locations, self.add_location, self.delete_location)
+        self.assets_frame = self._section("Assets", 4, self.assets, self.add_asset, self.delete_asset)
 
-        # --- GUI Elements ---
-        # Main Frame
-        main_frame = ttk.Frame(root, padding=20)
-        main_frame.pack(expand=True, fill='both')
+        ttk.Button(self, text="Create Structure", command=self.create_folders).grid(row=5, column=1, sticky="e", pady=12)
 
-        # Project Path
-        self.project_path_label = ttk.Label(main_frame, text="Project Path:")
-        self.project_path_entry = ttk.Entry(main_frame, textvariable=self.project_path, width=50, font=(font_name, 12))
-        self.browse_button = ttk.Button(main_frame, text="Browse", command=self.browse_folder)
-
-        # Project Name
-        self.project_name_label = ttk.Label(main_frame, text="Project Name:")
-        self.project_name_entry = ttk.Entry(main_frame, textvariable=self.project_name, width=50, font=(font_name, 12))
-
-        # Characters
-        self.characters_label = ttk.Label(main_frame, text="Characters:")
-        self.characters_frame = ttk.Frame(main_frame)
-        self.add_character_button = ttk.Button(main_frame, text="+ Character", command=self.add_character)
-
-        # Locations
-        self.locations_label = ttk.Label(main_frame, text="Locations:")
-        self.locations_frame = ttk.Frame(main_frame)
-        self.add_location_button = ttk.Button(main_frame, text="+ Location", command=self.add_location)
-
-        # Assets
-        self.assets_label = ttk.Label(main_frame, text="Assets:")
-        self.assets_frame = ttk.Frame(main_frame)
-        self.add_asset_button = ttk.Button(main_frame, text="+ Asset", command=self.add_asset)
-
-        # Create Button
-        self.create_button = ttk.Button(main_frame, text="Create Structure", command=self.create_folders)
-
-        # --- Layout ---
-        # Project Path
-        self.project_path_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        self.project_path_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        self.browse_button.grid(row=0, column=2, sticky="w", padx=5, pady=5)
-
-        # Project Name
-        self.project_name_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self.project_name_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
-
-        # Characters
-        self.characters_label.grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self.characters_frame.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
-        self.add_character_button.grid(row=2, column=2, sticky="w", padx=5, pady=5)
-
-        # Locations
-        self.locations_label.grid(row=3, column=0, sticky="w", padx=5, pady=5)
-        self.locations_frame.grid(row=3, column=1, sticky="ew", padx=5, pady=5)
-        self.add_location_button.grid(row=3, column=2, sticky="w", padx=5, pady=5)
-
-        # Assets
-        self.assets_label.grid(row=4, column=0, sticky="w", padx=5, pady=5)
-        self.assets_frame.grid(row=4, column=1, sticky="ew", padx=5, pady=5)
-        self.add_asset_button.grid(row=4, column=2, sticky="w", padx=5, pady=5)
-
-        # Create Button
-        self.create_button.grid(row=5, column=1, sticky="e", padx=5, pady=10)
-
-        # Column Configuration
-        root.columnconfigure(1, weight=1)
-
-        # Initial
-        self.update_character_widgets()
-        self.update_location_widgets()
-        self.update_asset_widgets()
+    def _section(self, title, row, collection, add_command, delete_command):
+        frame = ttk.LabelFrame(self, text=title, padding=6)
+        frame.grid(row=row, column=1, sticky="ew", pady=5)
+        frame.columnconfigure(0, weight=1)
+        ttk.Button(frame, text=f"+ {title[:-1]}", command=add_command).grid(row=0, column=1, padx=4)
+        return frame
 
     def browse_folder(self):
-        folder_selected = filedialog.askdirectory()
-        self.project_path.set(folder_selected)
+        selected = filedialog.askdirectory(title="Select project parent directory")
+        if selected:
+            self.project_path.set(selected)
 
     def add_character(self):
-        name = simpledialog.askstring("Character Name", "Enter Character Name:")
+        name = simpledialog.askstring("Character", "Enter character name:")
         if name:
-            self.characters.append(name)
-            self.update_character_widgets()
-
-    def add_location(self):
-        name = simpledialog.askstring("Location Name", "Enter Location Name:")
-        if name:
-            self.locations[name] = []
-            self.update_location_widgets()
-
-    def add_location_subfolder(self, location_name):
-        subfolder_name = simpledialog.askstring("Sub-Location Name", f"Enter Sub-Location Name for {location_name}:")
-        if subfolder_name:
-            self.locations[location_name].append(subfolder_name)
-            self.update_location_widgets()
-
-    def add_asset(self):
-        name = simpledialog.askstring("Asset Name", "Enter Asset Name:")
-        if name:
-            self.assets[name] = []  # Initialize with an empty list of subfolders
-            self.update_asset_widgets()
-
-    def add_asset_subfolder(self, asset_name):
-        subfolder_name = simpledialog.askstring("Sub-Asset Name", f"Enter Sub-Asset Name for {asset_name}:")
-        if subfolder_name:
-            self.assets[asset_name].append(subfolder_name)
-            self.update_asset_widgets()
-
-    def update_character_widgets(self):
-        for widget in self.characters_frame.winfo_children():
-            widget.destroy()
-
-        # widgets based on character list
-        for i, name in enumerate(self.characters):
-            label = tk.Label(self.characters_frame, text=f"{i + 1}. {name}")
-            label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
-
-            delete_button = tk.Button(self.characters_frame, text="Delete",
-                                      command=lambda idx=i: self.delete_character(idx))
-            delete_button.grid(row=i, column=1, sticky="e", padx=5, pady=2)
-
-    def update_location_widgets(self):
-        for widget in self.locations_frame.winfo_children():
-            widget.destroy()
-
-        row_num = 0
-        for location_name, subfolders in self.locations.items():
-            label = tk.Label(self.locations_frame, text=f"{location_name}:")
-            label.grid(row=row_num, column=0, sticky="w", padx=5, pady=2)
-
-            add_subfolder_button = tk.Button(self.locations_frame, text="+ Add Subfolder",
-                                             command=lambda name=location_name: self.add_location_subfolder(name))
-            add_subfolder_button.grid(row=row_num, column=1, sticky="w", padx=5, pady=2)
-
-            delete_button = tk.Button(self.locations_frame, text="Delete",
-                                      command=lambda name=location_name: self.delete_location(name))
-            delete_button.grid(row=row_num, column=2, sticky="e", padx=5, pady=2)
-
-            for i, subfolder_name in enumerate(subfolders):
-                subfolder_label = tk.Label(self.locations_frame, text=f"  - {subfolder_name}")
-                subfolder_label.grid(row=row_num + i + 1, column=0, columnspan=3, sticky="w", padx=20, pady=1)  # Indent
-
-            row_num += len(subfolders) + 1
-
-    def update_asset_widgets(self):
-        for widget in self.assets_frame.winfo_children():
-            widget.destroy()
-
-        row_num = 0
-        for asset_name, subfolders in self.assets.items():
-            label = tk.Label(self.assets_frame, text=f"{asset_name}:")
-            label.grid(row=row_num, column=0, sticky="w", padx=5, pady=2)
-
-            add_subfolder_button = tk.Button(self.assets_frame, text="+ Add Subfolder",
-                                             command=lambda name=asset_name: self.add_asset_subfolder(name))
-            add_subfolder_button.grid(row=row_num, column=1, sticky="w", padx=5, pady=2)
-
-            delete_button = tk.Button(self.assets_frame, text="Delete",
-                                      command=lambda name=asset_name: self.delete_asset(name))
-            delete_button.grid(row=row_num, column=2, sticky="e", padx=5, pady=2)
-
-            for i, subfolder_name in enumerate(subfolders):
-                subfolder_label = tk.Label(self.assets_frame, text=f"  - {subfolder_name}")
-                subfolder_label.grid(row=row_num + i + 1, column=0, columnspan=3, sticky="w", padx=20, pady=1)  # Indent
-
-            row_num += len(subfolders) + 1
+            self.characters.append(name.strip())
+            self._refresh()
 
     def delete_character(self, index):
         del self.characters[index]
-        self.update_character_widgets()
+        self._refresh()
 
-    def delete_location(self, location_name):
-        del self.locations[location_name]
-        self.update_location_widgets()
+    def add_location(self):
+        name = simpledialog.askstring("Location", "Enter location name:")
+        if name:
+            self.locations[name.strip()] = []
+            self._refresh()
 
-    def delete_asset(self, asset_name):
-        del self.assets[asset_name]
-        self.update_asset_widgets()
+    def delete_location(self, name):
+        self.locations.pop(name, None)
+        self._refresh()
+
+    def add_asset(self):
+        name = simpledialog.askstring("Asset", "Enter asset name:")
+        if name:
+            self.assets[name.strip()] = []
+            self._refresh()
+
+    def delete_asset(self, name):
+        self.assets.pop(name, None)
+        self._refresh()
+
+    def _refresh(self):
+        for frame in (self.characters_frame, self.locations_frame, self.assets_frame):
+            for widget in frame.winfo_children()[1:]:
+                widget.destroy()
+        for i, name in enumerate(self.characters, 1):
+            ttk.Label(self.characters_frame, text=name).grid(row=i, column=0, sticky="w")
+            ttk.Button(self.characters_frame, text="Delete", command=lambda idx=i - 1: self.delete_character(idx)).grid(row=i, column=2)
+        for i, name in enumerate(self.locations, 1):
+            ttk.Label(self.locations_frame, text=name).grid(row=i, column=0, sticky="w")
+            ttk.Button(self.locations_frame, text="Delete", command=lambda n=name: self.delete_location(n)).grid(row=i, column=2)
+        for i, name in enumerate(self.assets, 1):
+            ttk.Label(self.assets_frame, text=name).grid(row=i, column=0, sticky="w")
+            ttk.Button(self.assets_frame, text="Delete", command=lambda n=name: self.delete_asset(n)).grid(row=i, column=2)
 
     def create_folders(self):
-        """Handles the folder creation process."""
-        project_path = self.project_path.get()
-        project_name = self.project_name.get()
-
-        if not project_path or not project_name:
+        parent = self.project_path.get().strip()
+        name = self.project_name.get().strip()
+        if not parent or not name:
             messagebox.showerror("Error", "Project Path and Project Name are required.")
             return
-
+        template = ProjectTemplate(
+            project_name=name,
+            characters=tuple(self.characters),
+            locations=tuple((key, tuple(value)) for key, value in self.locations.items()),
+            assets=tuple((key, tuple(value)) for key, value in self.assets.items()),
+        )
         try:
-            # Create the core project folder
-            core_folder = os.path.join(project_path, project_name)
-            os.makedirs(core_folder, exist_ok=True)
+            created = create_project_structure(Path(parent), template=template)
+        except Exception as exc:
+            messagebox.showerror("Error", str(exc))
+            return
+        messagebox.showinfo("Success", f"Created {len(created)} directories for {name}.")
 
-            # Create subfolders
-            characters_folder = os.path.join(core_folder, f"{project_name}_characters")
-            locations_folder = os.path.join(core_folder, f"{project_name}_locations")
-            assets_folder = os.path.join(core_folder, f"{project_name}_assets")
-            scripts_folder = os.path.join(core_folder, f"{project_name}_scripts")
-            misc_folder = os.path.join(core_folder, f"{project_name}_misc")
 
-            os.makedirs(characters_folder, exist_ok=True)
-            os.makedirs(locations_folder, exist_ok=True)
-            os.makedirs(assets_folder, exist_ok=True)
-            os.makedirs(scripts_folder, exist_ok=True)
-            os.makedirs(misc_folder, exist_ok=True)
-
-            # Create character folders
-            for name in self.characters:
-                char_folder = os.path.join(characters_folder, f"{project_name}_{name}")
-                os.makedirs(char_folder, exist_ok=True)
-
-            # Create location folders and their subfolders
-            for location_name, subfolders in self.locations.items():
-                loc_folder = os.path.join(locations_folder, f"{project_name}_{location_name}")
-                os.makedirs(loc_folder, exist_ok=True)
-
-                # Create subfolders within the location folder
-                for subfolder_name in subfolders:
-                    sub_folder_path = os.path.join(loc_folder, f"{project_name}_{subfolder_name}")
-                    os.makedirs(sub_folder_path, exist_ok=True)
-
-            # Create assets folders and their subfolders
-            for asset_name, subfolders in self.assets.items():
-                ass_folder = os.path.join(assets_folder, f"{project_name}_{asset_name}")
-                os.makedirs(ass_folder, exist_ok=True)
-
-                # Create subfolders within the location folder
-                for subfolder_name in subfolders:
-                    sub_folder_path = os.path.join(ass_folder, f"{project_name}_{subfolder_name}")
-                    os.makedirs(sub_folder_path, exist_ok=True)
-
-            messagebox.showinfo("Success", "Folders created successfully!")
-
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
+def main():
+    root = tk.Tk()
+    root.title("ELI LAB — Advanced Template System")
+    root.geometry("700x600")
+    app = FolderAutomationApp(root)
+    app.pack(expand=True, fill="both")
+    root.mainloop()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = FolderAutomationApp(root)
-    root.mainloop()
+    main()
