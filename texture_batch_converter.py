@@ -1,139 +1,95 @@
-import os
+"""Legacy GUI adapter for the framework texture conversion service."""
+
+from __future__ import annotations
+
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from PIL import Image
-
-ALLOWED_EXTENSIONS = (".jpg", ".jpeg", ".tga", ".exr", ".hdr", ".bmp", ".gif", ".tiff", ".tif", ".png")
+from eli_lab.assets import convert_textures
 
 
-def is_image_file(filename):
-    return filename.lower().endswith(ALLOWED_EXTENSIONS)
+class TextureBatchConverterApp:
+    """Tkinter frontend for :func:`eli_lab.assets.convert_textures`."""
+
+    def __init__(self, root: tk.Tk) -> None:
+        self.root = root
+        self.root.title("Texture Batch Converter")
+        self.root.geometry("600x400")
+
+        frame = ttk.Frame(root, padding=20)
+        frame.pack(expand=True, fill="both")
+
+        ttk.Label(frame, text="Folder:").pack(pady=(0, 5), fill="x")
+        self.folder_entry = ttk.Entry(frame)
+        self.folder_entry.pack(pady=(0, 5), fill="x")
+
+        self.browse_button = ttk.Button(frame, text="Browse", command=self.browse_folder)
+        self.browse_button.pack(pady=(0, 10), fill="x")
+
+        self.replace_originals = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            frame,
+            text="Replace originals after successful conversion",
+            variable=self.replace_originals,
+        ).pack(pady=(0, 10), fill="x")
+
+        self.progress_bar = ttk.Progressbar(frame, mode="determinate")
+        self.progress_bar.pack(pady=(10, 15), fill="x")
+
+        self.convert_button = ttk.Button(frame, text="Convert Textures", command=self.start_conversion)
+        self.convert_button.pack(pady=(15, 0), fill="x")
+
+    def browse_folder(self) -> None:
+        folder = filedialog.askdirectory()
+        if folder:
+            self.folder_entry.delete(0, tk.END)
+            self.folder_entry.insert(0, folder)
+
+    def start_conversion(self) -> None:
+        directory = self.folder_entry.get().strip()
+        if not directory:
+            messagebox.showerror("Error", "Please select a folder.")
+            return
+
+        self.convert_button["state"] = "disabled"
+        self.browse_button["state"] = "disabled"
+
+        def progress(current: int, total: int) -> None:
+            def update() -> None:
+                self.progress_bar.configure(maximum=max(total, 1), value=current)
+            self.root.after(0, update)
+
+        def worker() -> None:
+            try:
+                results = convert_textures(
+                    directory,
+                    replace_original=self.replace_originals.get(),
+                    progress_callback=progress,
+                )
+                failures = [result for result in results if not result.success and result.error]
+                self.root.after(0, lambda: self.finish(failures))
+            except Exception as exc:
+                self.root.after(0, lambda: self.finish_error(exc))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def finish(self, failures: list) -> None:
+        self.convert_button["state"] = "normal"
+        self.browse_button["state"] = "normal"
+        self.progress_bar["value"] = 0
+        if failures:
+            messagebox.showwarning("Completed with errors", f"{len(failures)} texture(s) could not be converted.")
+        else:
+            messagebox.showinfo("Complete", "Texture conversion complete!")
+
+    def finish_error(self, error: Exception) -> None:
+        self.convert_button["state"] = "normal"
+        self.browse_button["state"] = "normal"
+        messagebox.showerror("Conversion error", str(error))
 
 
-def convert_texture_to_png(filepath, output_dir, replace_original=False):
-    """Convert one image to PNG without deleting the source by default."""
-    if not os.path.isfile(filepath) or not is_image_file(filepath):
-        return False
-    if filepath.lower().endswith(".png"):
-        return False
-
-    filename = os.path.basename(filepath)
-    name, _ = os.path.splitext(filename)
-    output_path = os.path.join(output_dir, name + ".png")
-
-    try:
-        with Image.open(filepath) as image:
-            image.save(output_path, "PNG")
-        if replace_original:
-            os.remove(filepath)
-        return True
-    except (OSError, ValueError) as exc:
-        print(f"Error processing '{filepath}': {exc}")
-        return False
-
-
-def convert_textures(directory, progress_callback, start_progress_callback, end_progress_callback, replace_original=False):
-    """Convert images in a directory to PNG."""
-    if not os.path.isdir(directory):
-        return
-
-    all_files = [
-        os.path.join(directory, filename)
-        for filename in os.listdir(directory)
-        if os.path.isfile(os.path.join(directory, filename)) and is_image_file(filename)
-    ]
-    start_progress_callback(len(all_files))
-
-    for index, filepath in enumerate(all_files, start=1):
-        convert_texture_to_png(filepath, directory, replace_original=replace_original)
-        progress_callback(index)
-
-    end_progress_callback()
-
-
-root = tk.Tk()
-root.title("Texture Batch Converter")
-root.geometry("600x400")
-
-style = ttk.Style(root)
-style.theme_use("clam")
-font_name = "Bahnschrift"
-bg_color = "#2e2e2e"
-fg_color = "white"
-text_color = "#d3d3d3"
-button_bg_color = "#4a4a4a"
-entry_bg_color = "#4a4a4a"
-button_active_bg_color = "#606060"
-style.configure(".", background=bg_color, foreground=fg_color, font=(font_name, 10))
-style.configure("TLabel", background=bg_color, foreground=fg_color, padding=5, font=(font_name, 12))
-style.configure("TButton", background=button_bg_color, foreground=fg_color, padding=8, relief="flat", font=(font_name, 11), borderwidth=0, focuscolor="gray", activebackground=button_active_bg_color, activeforeground=fg_color)
-style.map("TButton", background=[("active", button_active_bg_color), ("disabled", button_bg_color)], foreground=[("disabled", "gray")])
-style.configure("TEntry", fieldbackground=entry_bg_color, foreground=text_color, font=(font_name, 11))
-
-main_frame = ttk.Frame(root, padding=20)
-main_frame.pack(expand=True, fill="both")
-folder_label = ttk.Label(main_frame, text="Folder:")
-folder_label.pack(pady=(0, 5), fill="x")
-folder_path_entry = ttk.Entry(main_frame, width=50)
-folder_path_entry.pack(pady=(0, 5), fill="x")
-
-
-def browse_folder():
-    folder_path = filedialog.askdirectory()
-    if folder_path:
-        folder_path_entry.delete(0, tk.END)
-        folder_path_entry.insert(0, folder_path)
-
-
-browse_button = ttk.Button(main_frame, text="Browse", command=browse_folder)
-browse_button.pack(pady=(0, 10), fill="x")
-
-replace_originals = tk.BooleanVar(value=False)
-ttk.Checkbutton(
-    main_frame,
-    text="Replace originals after successful conversion",
-    variable=replace_originals,
-).pack(pady=(0, 10), fill="x")
-
-progress_bar = ttk.Progressbar(main_frame, orient="horizontal", length=400, mode="determinate")
-progress_bar.pack(pady=(10, 15), fill="x")
-
-
-def start_conversion():
-    directory = folder_path_entry.get()
-    if not directory:
-        messagebox.showerror("Error", "Please select a folder.")
-        return
-
-    convert_button["state"] = "disabled"
-    browse_button["state"] = "disabled"
-    replace_originals_value = replace_originals.get()
-
-    def update_progress(value):
-        root.after(0, lambda: progress_bar.configure(value=value))
-
-    def start_progress(max_value):
-        def initialize():
-            progress_bar.configure(maximum=max_value, value=0)
-        root.after(0, initialize)
-
-    def end_progress():
-        def finish():
-            progress_bar["value"] = 0
-            convert_button["state"] = "normal"
-            browse_button["state"] = "normal"
-            messagebox.showinfo("Info", "Texture conversion complete!")
-        root.after(0, finish)
-
-    threading.Thread(
-        target=convert_textures,
-        args=(directory, update_progress, start_progress, end_progress, replace_originals_value),
-        daemon=True,
-    ).start()
-
-
-convert_button = ttk.Button(main_frame, text="Convert Textures", command=start_conversion)
-convert_button.pack(pady=(15, 0), fill="x")
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    TextureBatchConverterApp(root)
+    root.mainloop()
