@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +20,7 @@ class RenameOperation:
 
     @property
     def changed(self) -> bool:
-        return self.source != self.destination
+        return self.source.resolve() != self.destination.resolve()
 
 
 def add_datetime(name: str, *, fmt: str = "%Y-%m-%d_%H-%M-%S", now: datetime | None = None) -> str:
@@ -38,7 +39,7 @@ def insert_text(name: str, text: str, position: int) -> str:
 
 
 def convert_case(name: str, mode: CaseMode) -> str:
-    converters = {
+    converters: dict[str, Callable[[str], str]] = {
         "upper": str.upper,
         "lower": str.lower,
         "title": str.title,
@@ -61,29 +62,33 @@ def change_extension(name: str, extension: str) -> str:
     return f"{Path(name).stem}{normalized}"
 
 
-def plan_renames(paths: list[str | Path], transform) -> list[RenameOperation]:
+def plan_renames(paths: list[str | Path], transform: Callable[[str], str]) -> list[RenameOperation]:
     """Create rename operations without touching the filesystem."""
-    operations: list[RenameOperation] = []
-    for raw_path in paths:
-        source = Path(raw_path)
-        destination = source.with_name(transform(source.name))
-        operations.append(RenameOperation(source=source, destination=destination))
-    return operations
+    return [
+        RenameOperation(source=Path(raw_path), destination=Path(raw_path).with_name(transform(Path(raw_path).name)))
+        for raw_path in paths
+    ]
 
 
 def apply_renames(operations: list[RenameOperation], *, overwrite: bool = False) -> list[RenameOperation]:
-    """Apply planned renames in place and return operations that changed files."""
+    """Apply a validated rename plan.
+
+    Existing destinations and rename cycles are rejected unless the caller
+    explicitly opts into overwrite for a destination outside the source set.
+    """
     changed = [operation for operation in operations if operation.changed]
-    destinations = {operation.destination.resolve() for operation in changed}
+    sources = {operation.source.resolve() for operation in changed}
+    destinations = [operation.destination.resolve() for operation in changed]
+
+    if len(destinations) != len(set(destinations)):
+        raise ValueError("rename plan contains duplicate destinations")
+    if any(destination in sources for destination in destinations):
+        raise ValueError("rename plan contains a collision or cycle")
 
     for operation in changed:
-        if not operation.source.exists():
+        if not operation.source.is_file():
             raise FileNotFoundError(operation.source)
         destination = operation.destination.resolve()
-        if destination in destinations and destination != operation.source.resolve():
-            # A second pass is intentionally conservative; callers should preview
-            # conflicting plans instead of risking accidental overwrites.
-            pass
         if destination.exists() and not overwrite:
             raise FileExistsError(destination)
 
