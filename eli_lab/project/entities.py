@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
-
 ENTITY_DIRECTORIES = {
     "character": "Characters",
     "location": "Locations",
@@ -15,6 +14,8 @@ ENTITY_DIRECTORIES = {
     "script": "Scripts",
     "test_scene": "Test Scenes",
 }
+
+ASSET_CONTAINER_NAMES = {"models", "materials", "objects", "scenes", "hdrs"}
 
 
 @dataclass(slots=True)
@@ -54,26 +55,41 @@ def _files_under(path: Path) -> list[Path]:
     return sorted((p for p in path.rglob("*") if p.is_file()), key=lambda p: p.as_posix().casefold())
 
 
+def _add_directory_children(root: Path, parent: Path, kind: str, entities: list[ProjectEntity]) -> None:
+    if not parent.is_dir():
+        return
+    for child in sorted(parent.iterdir(), key=lambda p: p.name.casefold()):
+        if child.name.startswith(".") or not child.is_dir():
+            continue
+        entities.append(ProjectEntity(child.name, kind, child.relative_to(root), _files_under(child)))
+
+
 def discover_entities(root: str | Path) -> list[ProjectEntity]:
-    """Discover semantic production entities using the standard project hierarchy."""
+    """Discover entities across canonical and legacy ELI LAB hierarchy variants."""
     root_path = Path(root).expanduser().resolve()
     if not root_path.exists():
         raise FileNotFoundError(root_path)
 
     entities: list[ProjectEntity] = []
-    for directory_name in ENTITY_DIRECTORIES.values():
-        parent = root_path / directory_name
-        if not parent.is_dir():
-            continue
-        kind = entity_kind_for_directory(directory_name)
-        assert kind is not None
-        for child in sorted(parent.iterdir(), key=lambda p: p.name.casefold()):
-            if child.name.startswith("."):
-                continue
-            if child.is_dir():
-                entities.append(ProjectEntity(child.name, kind, child.relative_to(root_path), _files_under(child)))
-            elif kind == "script":
-                entities.append(ProjectEntity(child.stem, kind, child.relative_to(root_path), [child.relative_to(root_path)]))
+    _add_directory_children(root_path, root_path / "Characters", "character", entities)
+    _add_directory_children(root_path, root_path / "Locations", "location", entities)
+    _add_directory_children(root_path, root_path / "Test Scenes", "test_scene", entities)
+
+    scenes = root_path / "Scenes" / "Main Scenes"
+    _add_directory_children(root_path, scenes if scenes.is_dir() else root_path / "Scenes", "scene", entities)
+
+    assets = root_path / "Assets"
+    _add_directory_children(root_path, assets, "asset", entities)
+    for container in ASSET_CONTAINER_NAMES:
+        _add_directory_children(root_path, assets / container, "asset", entities)
+
+    scripts = root_path / "Scripts"
+    if scripts.is_dir():
+        for child in sorted(scripts.iterdir(), key=lambda p: p.name.casefold()):
+            if child.is_file() and child.suffix.casefold() == ".py":
+                entities.append(ProjectEntity(child.stem, "script", child.relative_to(root_path), [child.relative_to(root_path)]))
+            elif child.is_dir() and not child.name.startswith("."):
+                entities.append(ProjectEntity(child.name, "script", child.relative_to(root_path), _files_under(child)))
 
     return entities
 
@@ -81,7 +97,7 @@ def discover_entities(root: str | Path) -> list[ProjectEntity]:
 def discover_project_files(root: str | Path) -> list[Path]:
     """Return project files while ignoring Git and common cache directories."""
     root_path = Path(root).expanduser().resolve()
-    ignored = {".git", ".venv", "__pycache__", ".pytest_cache"}
+    ignored = {".git", ".venv", "__pycache__", ".pytest_cache", ".eli_lab"}
     return sorted(
         (p.relative_to(root_path) for p in root_path.rglob("*") if p.is_file() and not any(part in ignored for part in p.parts)),
         key=lambda p: p.as_posix().casefold(),
