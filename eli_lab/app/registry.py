@@ -1,4 +1,8 @@
-"""Registry of temporary and future ELI LAB desktop tools."""
+"""Registry for the ELI LAB desktop tools.
+
+Legacy GUI entry points live under ``in_progress/`` while their reusable
+services are migrated into the package.
+"""
 
 from __future__ import annotations
 
