@@ -1,4 +1,4 @@
-# ELI LAB Multimedia Framework
+# eli_lab Multimedia Framework
 
 A Python toolkit for organizing, validating, transforming, documenting, and automating the ELI LAB multimedia production pipeline.
 
@@ -23,7 +23,7 @@ The framework provides services and desktop tools for:
 
 ## Project-first workflow
 
-ELI LAB is designed around a production workspace rather than isolated utilities:
+eli_lab is designed around a production workspace rather than isolated utilities:
 
 ```text
 OPEN / CREATE PROJECT
