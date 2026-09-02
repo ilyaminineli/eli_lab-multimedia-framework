@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from eli_lab.automation.renamer import (
     add_autonumber,
@@ -23,7 +23,15 @@ from eli_lab.automation.renamer import (
 
 
 class FileRenamerApp(ttk.Frame):
-    OPERATIONS = ("Add Date/Time", "Replace Text", "Insert Text", "Convert Case", "Add Auto-Number", "Remove Extension", "Change Extension")
+    OPERATIONS = (
+        "Add Date/Time",
+        "Replace Text",
+        "Insert Text",
+        "Convert Case",
+        "Add Auto-Number",
+        "Remove Extension",
+        "Change Extension",
+    )
 
     def __init__(self, parent: tk.Misc) -> None:
         super().__init__(parent, padding=20)
@@ -57,22 +65,29 @@ class FileRenamerApp(ttk.Frame):
         if operation == "Add Date/Time":
             return add_datetime
         if operation == "Replace Text":
-            find = tk.simpledialog.askstring("Find", "Text to replace:", parent=self)
-            replacement = tk.simpledialog.askstring("Replace", "Replacement:", parent=self)
+            find = simpledialog.askstring("Find", "Text to replace:", parent=self)
+            replacement = simpledialog.askstring("Replace", "Replacement:", parent=self)
             return lambda name: replace_text(name, find or "", replacement or "")
         if operation == "Insert Text":
-            text = tk.simpledialog.askstring("Insert", "Text:", parent=self) or ""
-            position = tk.simpledialog.askinteger("Insert", "Position:", parent=self, initialvalue=0) or 0
+            text = simpledialog.askstring("Insert", "Text:", parent=self) or ""
+            position = simpledialog.askinteger("Insert", "Position:", parent=self, initialvalue=0) or 0
             return lambda name: insert_text(name, text, position)
         if operation == "Convert Case":
-            mode = tk.simpledialog.askstring("Case", "upper / lower / title / sentence:", parent=self) or "lower"
+            mode = simpledialog.askstring("Case", "upper / lower / title / sentence:", parent=self) or "lower"
             return lambda name: convert_case(name, mode)
         if operation == "Add Auto-Number":
-            start = tk.simpledialog.askinteger("Number", "Starting number:", parent=self, initialvalue=1) or 1
-            return lambda name, counter=[start]: add_autonumber(name, counter.__setitem__(0, counter[0] + 1) or counter[0] - 1)
+            start = simpledialog.askinteger("Number", "Starting number:", parent=self, initialvalue=1) or 1
+            counter = [start]
+
+            def transform(name: str) -> str:
+                value = add_autonumber(name, counter[0])
+                counter[0] += 1
+                return value
+
+            return transform
         if operation == "Remove Extension":
             return lambda name: Path(name).stem
-        extension = tk.simpledialog.askstring("Extension", "New extension:", parent=self) or ".png"
+        extension = simpledialog.askstring("Extension", "New extension:", parent=self) or ".png"
         return lambda name: change_extension(name, extension)
 
     def _preview(self) -> None:
