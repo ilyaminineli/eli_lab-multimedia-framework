@@ -3,6 +3,3 @@ Pillow>=11.3,<13
 PySide6>=6.9,<7
 python-magic>=0.4.27,<0.5
 pngquant
-
-# Optional external tools
-# pngquant must be installed separately and available on PATH for texture optimization.
