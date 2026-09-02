@@ -13,6 +13,7 @@ from .metadata import METADATA_FILENAME, ProjectMetadata, load_metadata, save_me
 WORKSPACE_DIRNAME = ".eli_lab"
 HISTORY_FILENAME = "history.jsonl"
 ENTITY_METADATA_FILENAME = "entity.json"
+FILE_ENTITY_METADATA_SUFFIX = ".entity.json"
 
 
 @dataclass(slots=True)
@@ -46,18 +47,28 @@ def history_path(root: str | Path) -> Path:
     return workspace_dir(root) / HISTORY_FILENAME
 
 
+def entity_metadata_path(entity_path: str | Path) -> Path:
+    path = Path(entity_path).expanduser().resolve()
+    if path.is_file():
+        return path.with_name(f"{path.stem}{FILE_ENTITY_METADATA_SUFFIX}")
+    if path.suffix and not path.exists():
+        return path.with_name(f"{path.name}{FILE_ENTITY_METADATA_SUFFIX}")
+    return path / ENTITY_METADATA_FILENAME
+
+
 def load_entity_metadata(entity_path: str | Path) -> EntityMetadata:
-    path = Path(entity_path).expanduser().resolve() / ENTITY_METADATA_FILENAME
+    target = Path(entity_path).expanduser().resolve()
+    path = entity_metadata_path(target)
     if not path.exists():
-        return EntityMetadata(name=path.parent.name, kind="asset")
+        return EntityMetadata(name=target.stem if target.is_file() else target.name, kind="asset")
     data = json.loads(path.read_text(encoding="utf-8"))
-    return EntityMetadata(**{field: data.get(field, default) for field, default in asdict(EntityMetadata("", "")).items()})
+    defaults = asdict(EntityMetadata("", "asset"))
+    return EntityMetadata(**{field: data.get(field, default) for field, default in defaults.items()})
 
 
 def save_entity_metadata(entity_path: str | Path, metadata: EntityMetadata) -> Path:
-    entity_root = Path(entity_path).expanduser().resolve()
-    entity_root.mkdir(parents=True, exist_ok=True)
-    path = entity_root / ENTITY_METADATA_FILENAME
+    path = entity_metadata_path(entity_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(asdict(metadata), indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
     return path
 
