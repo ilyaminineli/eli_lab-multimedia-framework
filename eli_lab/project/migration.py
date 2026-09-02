@@ -146,6 +146,7 @@ def generate_metadata(scan: ProjectScan) -> ProjectMetadata:
 
 def generate_entity_metadata(root: str | Path) -> int:
     from .entities import discover_entities
+    from .descriptions import write_entity_markdown
     root = Path(root).expanduser().resolve()
     count = 0
     for entity in discover_entities(root):
@@ -154,6 +155,7 @@ def generate_entity_metadata(root: str | Path) -> int:
         if metadata.exists():
             continue
         save_entity_metadata(path, EntityMetadata(entity.name, entity.kind))
+        write_entity_markdown(root, entity)
         count += 1
     record_history(root, "generate_entity_metadata", "", f"created={count}")
     return count
