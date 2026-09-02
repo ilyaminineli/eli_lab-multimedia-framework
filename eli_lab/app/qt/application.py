@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QLineEd
 from ..registry import TOOLS
 from .audits import AuditTool
 from .material_library import MaterialLibraryTool
+from .texture_relocation import TextureRelocationTool
 from .tools import create_tool_widget
 from .workspace import WorkspaceTool
 
@@ -101,6 +102,7 @@ class MainWindow(QMainWindow):
         if key == "workspace": tool = WorkspaceTool(self)
         elif key == "audit": tool = AuditTool(self)
         elif key == "material_library": tool = MaterialLibraryTool(self)
+        elif key == "texture_relocation": tool = TextureRelocationTool(self)
         else: tool = create_tool_widget(key, self)
         wrapper = QWidget(); wrapper.setObjectName("ToolPage"); outer = QVBoxLayout(wrapper); outer.setContentsMargins(24, 22, 24, 22); outer.setSpacing(0)
         scroll = QScrollArea(); scroll.setObjectName("ToolScroll"); scroll.setWidgetResizable(True); scroll.setFrameShape(QFrame.NoFrame); scroll.setWidget(tool); outer.addWidget(scroll); return wrapper
