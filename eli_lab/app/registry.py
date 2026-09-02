@@ -14,7 +14,8 @@ class ToolDefinition:
 
 
 TOOLS: tuple[ToolDefinition, ...] = (
-    ToolDefinition("template", "Advanced Template System", "Project", "Create standardized project trees."),
+    ToolDefinition("workspace", "Project Workspace", "Project", "Open, scan, edit, normalize and document an existing production project."),
+    ToolDefinition("template", "Advanced Template System", "Project", "Create standardized project trees and entity folders."),
     ToolDefinition("metadata", "Project Metadata", "Project", "Create and edit canonical project metadata."),
     ToolDefinition("documentation", "Project Documentation", "Project", "Generate project README documentation."),
     ToolDefinition("file_validation", "File Validation", "Validation", "Compare a project against a saved file snapshot."),
