@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from .entities import ProjectEntity, group_entities
-from .workspace import ProjectMetadata, WorkspaceSummary
+from .metadata import ProjectMetadata
+from .workspace import WorkspaceSummary
 
 PRESETS = {
     "project": "Project README",
@@ -30,18 +31,15 @@ def _entity_lines(entities: list[ProjectEntity]) -> str:
 
 
 def build_preset_markdown(summary: WorkspaceSummary, preset: str = "project") -> str:
-    metadata = summary.metadata
+    metadata: ProjectMetadata | None = summary.metadata
     title = metadata.project_name if metadata else summary.root.name
     description = metadata.project_description.strip() if metadata else ""
     counts = summary.counts
     if preset == "compact":
         return f"# {title}\n\n{description}\n\n**Files:** {len(summary.files)}  \n**Entities:** {len(summary.entities)}  \n**Profile:** managed by ELI LAB\n"
     if preset == "pipeline":
-        return (f"# {title} — Pipeline Report\n\n"
-                f"**Project root:** `{summary.root}`\n\n"
-                f"**Files:** {len(summary.files)}\n\n"
-                + "\n".join(f"- {kind.title()}: {count}" for kind, count in sorted(counts.items()))
-                + "\n\n## Structure\n\nGenerated and normalized through ELI LAB project services.\n")
+        rows = "\n".join(f"- {kind.title()}: {count}" for kind, count in sorted(counts.items())) or "- No semantic entities discovered"
+        return f"# {title} — Pipeline Report\n\n**Project root:** `{summary.root}`\n\n**Files:** {len(summary.files)}\n\n{rows}\n\n## Structure\n\nGenerated and normalized through ELI LAB project services.\n"
     if preset == "catalogue":
         return f"# {title} — Entity Catalogue\n\n{_entity_lines(summary.entities)}\n"
     themes = metadata.key_themes if metadata else ""
