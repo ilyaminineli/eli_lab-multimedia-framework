@@ -55,13 +55,19 @@ class ToolWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("ToolWidget")
-        self._status = QLabel()
+        self.setAttribute(self.WidgetAttribute.WA_StyledBackground, True)
+        self._status = QLabel("Ready")
+        self._status.setObjectName("StatusLabel")
         self._status.setWordWrap(True)
+        self._status.setMinimumHeight(32)
 
     def set_status(self, text: str) -> None:
-        self._status.setText(text)
+        self._status.setText(text or "Ready")
 
     def add_status(self, layout: QVBoxLayout) -> None:
+        layout.setContentsMargins(4, 4, 4, 12)
+        layout.setSpacing(12)
+        layout.addStretch(0)
         layout.addWidget(self._status)
 
     def run_background(
@@ -73,6 +79,7 @@ class ToolWidget(QWidget):
         **kwargs: Any,
     ) -> None:
         button.setEnabled(False)
+        self.set_status("Working…")
         worker = Worker(function, *args, **kwargs)
         worker.signals.result.connect(on_result)
         worker.signals.error.connect(lambda message: self.show_error(message))
@@ -112,9 +119,13 @@ def path_row(
     container = QWidget(parent)
     layout = QHBoxLayout(container)
     layout.setContentsMargins(0, 0, 0, 0)
-    layout.addWidget(QLabel(label))
+    layout.setSpacing(8)
+    label_widget = QLabel(label)
+    label_widget.setMinimumWidth(145)
+    layout.addWidget(label_widget)
     layout.addWidget(target, 1)
     button = QPushButton("Browse")
+    button.setMinimumWidth(82)
     if file:
         button.clicked.connect(lambda: browse_file(parent, target, title, filter))
     else:
@@ -126,4 +137,7 @@ def path_row(
 def form_group(title: str) -> tuple[QGroupBox, QFormLayout]:
     box = QGroupBox(title)
     form = QFormLayout(box)
+    form.setLabelAlignment(form.labelAlignment())
+    form.setHorizontalSpacing(16)
+    form.setVerticalSpacing(10)
     return box, form
