@@ -28,5 +28,8 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+eli_lab = ["assets/blender/templates/*.blend"]
+
 [project.urls]
 Repository = "https://github.com/ELIASADAMS/eli_lab-multimedia-framework"
