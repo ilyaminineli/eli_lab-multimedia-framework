@@ -1,52 +1,30 @@
 # Architecture
 
-The framework uses a deliberately simple root-level Python package. Reusable logic lives in `eli_lab/`; temporary legacy desktop programs live in `in_progress/`.
+The framework uses a layered Python package with a native PySide6 desktop application.
 
-## Repository shape
+## Layout
 
-```text
-eli_lab-multimedia-framework/
-├── eli_lab/
-│   ├── core/                 # paths, config, filesystem primitives
-│   ├── project/              # templates, metadata, docs, validation, Blender
-│   ├── assets/               # textures, optimization, Blender resources
-│   ├── automation/           # rename planning and repeatable operations
-│   ├── analysis/             # tasks and performance analysis
-│   └── app/                  # launcher and application registry
-├── in_progress/              # legacy GUI adapters being replaced
-├── tests/
-├── docs/
-├── pyproject.toml
-└── requirements.txt
-```
+- `eli_lab/core` — configuration, paths, filesystem helpers
+- `eli_lab/project` — metadata, templates, documentation, structure, validation
+- `eli_lab/assets` — texture conversion, optimization, Blender templates
+- `eli_lab/automation` — filename transformation and rename planning
+- `eli_lab/analysis` — task storage and performance analysis
+- `eli_lab/validation` — project file snapshots and comparisons
+- `eli_lab/app` — application registry, launcher, and PySide6 UI
+- `in_progress` — thin compatibility entry points for the former standalone tools
 
-There is intentionally no `src/` directory. The package is directly visible at repository root.
+## GUI boundary
 
-## Dependency direction
+All active GUI code lives in `eli_lab/app/qt` and uses PySide6. Tool widgets call reusable services and do not own business or filesystem rules.
 
-```text
-GUI / CLI
-   ↓
-Application adapters (`eli_lab.app`)
-   ↓
-Services (`project`, `assets`, `automation`, `analysis`)
-   ↓
-Core utilities (`eli_lab.core`)
-```
+The old standalone filenames under `in_progress/` remain as tiny launchers so existing commands continue to work while the application converges on one Qt UI stack.
 
-Reusable services must not import Tkinter, display message boxes, or depend on the current working directory. Application code translates user actions into service calls and translates returned results into UI feedback.
+## Rules
 
-## Legacy migration
-
-The files in `in_progress/` are temporary compatibility tools. They are not the architecture; they are migration staging.
-
-The intended end state is for each tool to have a native adapter under `eli_lab.app.tools/`, after which the corresponding legacy file can be removed.
-
-## Safety rules
-
-1. Preview destructive changes when practical.
-2. Rename operations reject destination collisions.
-3. Filesystem paths use `pathlib.Path`.
-4. Long-running GUI work stays outside Tk's main thread.
-5. External executables are configurable backends.
-6. New reusable functionality goes under `eli_lab/`.
+1. Reusable logic must not depend on PySide6 or any other GUI toolkit.
+2. GUI code belongs in the application layer.
+3. Filesystem paths use `pathlib` and shared path/config services.
+4. Destructive asset operations require explicit user intent.
+5. Long-running operations should use Qt's worker/thread facilities rather than blocking the UI thread.
+6. Validation and analysis return structured data; widgets decide how it is presented.
+7. The application has one desktop entry point: `eli_lab.app.qt.application:main`.
