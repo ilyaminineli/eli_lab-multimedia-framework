@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import signal
 import subprocess
-from pathlib import Path
 import sys
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -16,14 +14,13 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
-    QMessageBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from .tools import create_tool_widget
 from ..registry import TOOLS
+from .tools import create_tool_widget
 
 
 APP_STYLE = """
@@ -52,9 +49,9 @@ class MainWindow(QMainWindow):
         self.processes: list[subprocess.Popen] = []
         self.stack = QStackedWidget()
         self.navigation = QListWidget()
-        self.navigation.setFixedWidth(230)
+        self.navigation.setFixedWidth(255)
         self._build()
-        self._connect()
+        self.navigation.currentRowChanged.connect(self.stack.setCurrentIndex)
 
     def _build(self) -> None:
         root = QWidget()
@@ -62,31 +59,23 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
 
         sidebar = QFrame()
-        sidebar.setObjectName("Sidebar")
         sidebar_layout = QVBoxLayout(sidebar)
         title = QLabel("eli_lab\nMultimedia Framework")
         title.setStyleSheet("font-size: 18px; font-weight: 700; padding: 18px 10px;")
         sidebar_layout.addWidget(title)
         sidebar_layout.addWidget(self.navigation, 1)
 
-        categories: dict[str, list] = {}
         for tool in TOOLS:
-            categories.setdefault(tool.category, []).append(tool)
-            item = QListWidgetItem(f"{tool.name}\n{tool.description}")
-            item.setData(Qt.UserRole, tool.script)
+            item = QListWidgetItem(f"{tool.name}\n{tool.category} · {tool.description}")
+            item.setToolTip(tool.description)
             self.navigation.addItem(item)
-            self.stack.addWidget(create_tool_widget(tool.script, self))
+            self.stack.addWidget(create_tool_widget(tool.key, self))
 
         layout.addWidget(sidebar)
         layout.addWidget(self.stack, 1)
         self.setCentralWidget(root)
-
-        # Start with the first tool and use a simple category hint in the list.
         if self.navigation.count():
             self.navigation.setCurrentRow(0)
-
-    def _connect(self) -> None:
-        self.navigation.currentRowChanged.connect(self.stack.setCurrentIndex)
 
     def closeEvent(self, event) -> None:  # noqa: N802
         for process in self.processes[:]:
