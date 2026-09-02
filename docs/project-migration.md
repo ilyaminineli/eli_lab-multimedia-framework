@@ -1,35 +1,36 @@
-# Project subsystem migration
+# Project migration guide
 
-The project subsystem now lives directly in `eli_lab/project`.
+The framework has moved from a collection of standalone GUI scripts to a reusable package with a single PySide6 desktop application.
 
-## Current modules
+## Current structure
 
-- `metadata.py` — canonical `ProjectMetadata` model and JSON persistence.
-- `structure.py` — compatibility facade for project structure generation.
-- `templates.py` — reusable project template generation.
-- `documentation.py` — project documentation generation.
-- `blender.py` — Blender template provisioning.
-- `validation.py` — GUI-independent project validation and reports.
+Reusable services live under `eli_lab/`. Active GUI widgets live under `eli_lab/app/qt/`. The `in_progress/` directory contains compatibility entry points only; those filenames now delegate to PySide6 widgets.
 
-## Legacy compatibility
+## Migration rules
 
-The old Tkinter programs are temporarily stored in `in_progress/`. They are migration artifacts, not the canonical implementation. Reusable logic belongs in `eli_lab/`.
-
-## Migration status
-
-1. Project metadata → `eli_lab.project.metadata` ✅
-2. Project structure/templates → `eli_lab.project.templates` ✅
-3. Project validation/Blender provisioning → `eli_lab.project.validation` + `eli_lab.project.blender` ✅
-4. Documentation generation → `eli_lab.project.documentation` ✅
-5. Service-level project tests → `tests/` ✅
-
-The remaining work is application/UI consolidation under `eli_lab.app`.
-
-## Rules
-
-- Project code uses `pathlib.Path`.
-- Project services do not import Tkinter.
-- GUI code only translates user actions into service calls.
-- Validation returns structured reports rather than displaying message boxes.
+- Project code must use `pathlib.Path`.
+- Project services must not import PySide6 or any GUI toolkit.
+- GUI code must only translate user actions into service calls and presentation state.
+- Validation returns structured reports rather than displaying dialogs from service code.
 - Metadata is UTF-8 JSON and uses a single canonical schema.
-- No developer-specific absolute paths are permitted.
+- Long operations should run outside the Qt GUI thread.
+
+## Running the application
+
+From the repository root:
+
+```text
+python init.py
+```
+
+The package-native equivalent is:
+
+```text
+python -m eli_lab
+```
+
+Installed environments can also use the `eli-lab` console script.
+
+## Compatibility
+
+The legacy filenames under `in_progress/` still work as direct launchers, but they no longer contain their own Tkinter interfaces. This keeps old workflows usable while maintaining a single PySide6 implementation.
