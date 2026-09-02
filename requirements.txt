@@ -1,7 +1,7 @@
 # Runtime dependencies
 Pillow>=11.3,<13
+PySide6>=6.9,<7
 python-magic>=0.4.27,<0.5
-tkcalendar>=1.6.1,<2
 
 # Optional external tools
 # pngquant must be installed separately and available on PATH for texture optimization.
