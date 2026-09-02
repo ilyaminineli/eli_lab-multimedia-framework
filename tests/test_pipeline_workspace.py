@@ -8,12 +8,13 @@ from eli_lab.project.workspace import scan_workspace
 def test_scan_recognizes_legacy_daly_layout(tmp_path: Path) -> None:
     (tmp_path / "Characters").mkdir()
     (tmp_path / "Scenes").mkdir()
-    (tmp_path / "Scenes" / "Tobias_Bedroom.blend").write_bytes(b"blend")
+    scene = tmp_path / "Scenes" / "Tobias_Bedroom.blend"
+    scene.write_bytes(b"blend")
     (tmp_path / "cover.png").write_bytes(b"png")
 
     scan = scan_project(tmp_path)
     assert scan.profile == "legacy-daly"
-    assert scan.loose_blends == [Path("Scenes") / "Tobias_Bedroom.blend"] or scan.loose_blends == []
+    assert scene.relative_to(tmp_path) in scan.loose_blends
     assert Path("cover.png") in scan.loose_textures
 
 
@@ -21,8 +22,7 @@ def test_legacy_scene_root_blend_has_safe_migration_plan(tmp_path: Path) -> None
     (tmp_path / "Scenes").mkdir()
     source = tmp_path / "Scenes" / "Bedroom.blend"
     source.write_bytes(b"blend")
-    scan = scan_project(tmp_path)
-    plan = build_migration_plan(scan)
+    plan = build_migration_plan(scan_project(tmp_path))
     assert any(op.source == source and op.destination == tmp_path / "Scenes" / "Main Scenes" / "Bedroom" / "Bedroom.blend" for op in plan.operations)
 
 
