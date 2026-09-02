@@ -62,7 +62,7 @@ def scan_project(root: str | Path) -> ProjectScan:
         profile = "mixed" if top else "unknown"
     compliance = round(len(canonical & top) / len(canonical) * 100)
     files = discover_project_files(root)
-    loose_blends = [p for p in files if p.suffix.casefold() == ".blend" and len(p.parts) == 1]
+    loose_blends = [p for p in files if p.suffix.casefold() == ".blend" and (len(p.parts) == 1 or (len(p.parts) == 2 and p.parts[0].casefold() == "scenes"))]
     loose_textures = [p for p in files if p.suffix.casefold() in TEXTURES and len(p.parts) == 1]
     uuid_dirs: list[Path] = []
     scene_asset_dirs: list[Path] = []
@@ -92,9 +92,9 @@ def build_migration_plan(scan: ProjectScan) -> MigrationPlan:
     chars = root / "Characters"
     for rel in scan.loose_blends:
         source = root / rel
-        if (root / "Scenes").is_dir():
+        if rel.parts and rel.parts[0].casefold() == "scenes":
             target = scenes / source.stem / source.name
-            ops.append(MigrationOperation(source, target, "Loose .blend at project root / legacy Scenes", .98))
+            ops.append(MigrationOperation(source, target, "Loose Blender scene under Scenes", .98))
             dirs.add(target.parent)
         elif scan.profile in {"mixed", "legacy-generic"}:
             target = root / "Scenes" / source.stem / source.name
