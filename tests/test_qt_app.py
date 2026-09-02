@@ -1,14 +1,18 @@
 """Smoke tests for the PySide6 application registry."""
 
 from eli_lab.app.registry import TOOLS
-from eli_lab.app.qt.tools import TOOL_WIDGETS, create_tool_widget
 from eli_lab.app.qt.audits import AuditTool
+from eli_lab.app.qt.material_library import MaterialLibraryTool
+from eli_lab.app.qt.texture_relocation import TextureRelocationTool
 from eli_lab.app.qt.workspace import WorkspaceTool
+from eli_lab.app.qt.tools import TOOL_WIDGETS, create_tool_widget
 
 
 SPECIAL_WIDGETS = {
     "workspace": WorkspaceTool,
     "audit": AuditTool,
+    "material_library": MaterialLibraryTool,
+    "texture_relocation": TextureRelocationTool,
 }
 
 
