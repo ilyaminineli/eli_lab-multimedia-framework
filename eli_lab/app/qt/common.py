@@ -6,7 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Qt, Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
@@ -55,7 +55,7 @@ class ToolWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("ToolWidget")
-        self.setAttribute(self.WidgetAttribute.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._status = QLabel("Ready")
         self._status.setObjectName("StatusLabel")
         self._status.setWordWrap(True)
@@ -67,7 +67,6 @@ class ToolWidget(QWidget):
     def add_status(self, layout: QVBoxLayout) -> None:
         layout.setContentsMargins(4, 4, 4, 12)
         layout.setSpacing(12)
-        layout.addStretch(0)
         layout.addWidget(self._status)
 
     def run_background(
@@ -137,7 +136,6 @@ def path_row(
 def form_group(title: str) -> tuple[QGroupBox, QFormLayout]:
     box = QGroupBox(title)
     form = QFormLayout(box)
-    form.setLabelAlignment(form.labelAlignment())
     form.setHorizontalSpacing(16)
     form.setVerticalSpacing(10)
     return box, form
