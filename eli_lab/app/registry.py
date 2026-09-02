@@ -1,9 +1,4 @@
-"""Central registry for the current desktop tools.
-
-The registry is intentionally data-only so the launcher can later switch from
-legacy script processes to native in-process GUI components without changing
-its navigation structure.
-"""
+"""Registry of temporary and future ELI LAB desktop tools."""
 
 from __future__ import annotations
 
@@ -19,14 +14,14 @@ class ToolDefinition:
 
 
 TOOLS: tuple[ToolDefinition, ...] = (
-    ToolDefinition("Advanced Template System", "Project", "advanced_template_system", "Create standardized project trees."),
-    ToolDefinition("Project Metadata", "Project", "project_metadata_integration", "Create and edit canonical project metadata."),
-    ToolDefinition("Project Documentation", "Project", "project_documentation_generator", "Generate project README documentation."),
-    ToolDefinition("File Validation", "Validation", "file_validation", "Compare a project against saved file state."),
-    ToolDefinition("Project Validation", "Validation", "project_validation", "Provision missing Blender templates."),
-    ToolDefinition("Texture Conversion", "Assets", "texture_batch_converter", "Convert source textures to PNG."),
-    ToolDefinition("Texture Optimization", "Assets", "texture_batch_optimising_tool", "Optimize PNG textures with pngquant."),
-    ToolDefinition("File Renaming", "Automation", "custom_file_renaming", "Preview and apply batch filename operations."),
-    ToolDefinition("Task Management", "Analysis", "task_assigner", "Create and track production tasks."),
-    ToolDefinition("Performance Analysis", "Analysis", "historical_performance_analyzer", "Analyze historical task performance."),
+    ToolDefinition("Advanced Template System", "Project", "in_progress/advanced_template_system.py", "Create standardized project trees."),
+    ToolDefinition("Project Metadata", "Project", "in_progress/project_metadata_integration.py", "Create and edit canonical project metadata."),
+    ToolDefinition("Project Documentation", "Project", "in_progress/project_documentation_generator.py", "Generate project README documentation."),
+    ToolDefinition("File Validation", "Validation", "in_progress/file_validation.py", "Compare a project against saved file state."),
+    ToolDefinition("Project Validation", "Validation", "in_progress/project_validation.py", "Provision missing Blender templates."),
+    ToolDefinition("Texture Conversion", "Assets", "in_progress/texture_batch_converter.py", "Convert source textures to PNG."),
+    ToolDefinition("Texture Optimization", "Assets", "in_progress/texture_batch_optimising_tool.py", "Optimize PNG textures with pngquant."),
+    ToolDefinition("File Renaming", "Automation", "in_progress/custom_file_renaming.py", "Preview and apply batch filename operations."),
+    ToolDefinition("Task Management", "Analysis", "in_progress/task_assigner.py", "Create and track production tasks."),
+    ToolDefinition("Performance Analysis", "Analysis", "in_progress/historical_performance_analyzer.py", "Analyze historical task performance."),
 )
