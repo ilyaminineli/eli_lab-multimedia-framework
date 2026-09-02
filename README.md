@@ -20,12 +20,10 @@ The framework provides services and desktop tools for:
 
 ```text
 eli_lab-multimedia-framework/
-├── assets/
-│   └── blender/templates/       # bundled Blender source files
 ├── src/eli_lab/
 │   ├── core/                    # paths, config, filesystem helpers
-│   ├── project/                 # templates, metadata, docs, validation
-│   ├── assets/                  # texture conversion and optimization
+│   ├── project/                 # templates, metadata, docs, validation, Blender
+│   ├── assets/                  # texture services + packaged Blender templates
 │   ├── automation/              # rename planning and other operations
 │   ├── analysis/                # task and performance services
 │   └── app/                     # GUI/CLI adapters and tool registry
