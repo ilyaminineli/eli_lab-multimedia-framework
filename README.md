@@ -2,7 +2,7 @@
 
 A Python toolkit for organizing, validating, transforming, and automating the ELI LAB multimedia production pipeline.
 
-> **Status:** active cleanup. The reusable framework lives directly in `eli_lab/`; temporary legacy desktop programs live in `in_progress/` while they are replaced by native application modules.
+> **Status:** PySide6 migration. Reusable framework services live directly in `eli_lab/`, and all active desktop interfaces are implemented in `eli_lab/app/qt/`.
 
 ## What it does
 
@@ -10,24 +10,25 @@ The framework provides services and desktop tools for:
 
 - project templates, metadata, documentation, and validation
 - Blender template provisioning
-- filesystem analysis and file validation
+- filesystem analysis and file validation snapshots
 - batch file renaming with previewable plans
 - texture conversion and `pngquant` optimization
 - task storage and historical performance analysis
-- a central desktop launcher
+- one native PySide6 desktop application
 
 ## Repository structure
 
 ```text
 eli_lab-multimedia-framework/
-├── eli_lab/                    # the actual Python package
+├── eli_lab/
 │   ├── core/                   # paths, config, filesystem primitives
 │   ├── project/                # project models and services
 │   ├── assets/                 # textures, optimization, Blender resources
 │   ├── automation/             # rename planning and repeatable operations
 │   ├── analysis/               # tasks and performance analysis
-│   └── app/                    # launcher and application registry
-├── in_progress/                # temporary legacy GUIs being migrated
+│   ├── validation/             # filesystem snapshots/comparisons
+│   └── app/                    # registry, launcher, and PySide6 UI
+├── in_progress/                # compatibility launchers for former standalone tools
 ├── tests/                      # service-level tests
 ├── docs/                       # architecture and migration notes
 ├── pyproject.toml
@@ -55,15 +56,21 @@ project/
 └── tasks/
 ```
 
-## Running the launcher
+## Running the application
 
-After installing the package in development mode:
+From the repository root:
+
+```bash
+python init.py
+```
+
+The package-native command is:
 
 ```bash
 python -m eli_lab
 ```
 
-or:
+Installed environments can also use:
 
 ```bash
 eli-lab
@@ -102,9 +109,9 @@ Texture optimization can use `pngquant`. It must be available on `PATH` when opt
 
 ## Development principles
 
-Keep reusable logic independent of Tkinter. Use `pathlib.Path`, return structured results from services, preview destructive changes, and keep GUI updates on Tk's main thread.
+Keep reusable logic independent of the GUI toolkit. Use `pathlib.Path`, return structured results from services, preview destructive changes, and keep long-running work outside the Qt GUI thread.
 
-See [docs/architecture.md](docs/architecture.md) for the dependency rules and migration plan.
+See [docs/architecture.md](docs/architecture.md) for the dependency rules and [docs/project-migration.md](docs/project-migration.md) for the migration notes.
 
 ## License
 
