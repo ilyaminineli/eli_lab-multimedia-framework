@@ -20,6 +20,7 @@ TOOLS: tuple[ToolDefinition, ...] = (
     ToolDefinition("documentation", "Documentation", "Project", "Generate preset-based project and entity documentation."),
     ToolDefinition("audit", "Production Audit", "Pipeline", "Audit structure, Blender references, texture locations, texture sets and dependencies."),
     ToolDefinition("material_library", "Material Library", "Pipeline", "Inspect material sources, texture sets and textures outside the canonical library."),
+    ToolDefinition("texture_relocation", "Texture Relocation", "Pipeline", "Review referenced textures outside Assets/Textures and safely repair Blender references when relocating them."),
     ToolDefinition("file_validation", "File Validation", "Validation", "Compare a project against a saved file snapshot."),
     ToolDefinition("project_validation", "Structure Validation", "Validation", "Validate required project directories."),
     ToolDefinition("texture_conversion", "Texture Conversion", "Assets", "Convert supported source textures to PNG."),
