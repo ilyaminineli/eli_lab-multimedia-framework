@@ -22,11 +22,11 @@ dependencies = [
 ]
 
 [tool.setuptools]
-package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["eli_lab*"]
 
 [tool.setuptools.package-data]
 eli_lab = ["assets/blender/templates/*.blend"]
