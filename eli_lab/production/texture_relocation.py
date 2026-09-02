@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from eli_lab.project.workspace import record_history
+
 from .blender_inspection import BlenderReference, find_blender, inspect_project
 from .intelligence import IMAGE_EXTENSIONS
 
@@ -30,7 +32,6 @@ class TextureRelocationResult:
     destination: Path
     repaired_blends: tuple[Path, ...]
     backup_directory: Path
-
 
 
 def canonical_texture_directory(root: str | Path) -> Path:
@@ -81,14 +82,13 @@ def plan_referenced_texture_relocations(root: str | Path, blender_executable: st
             continue
         destination = _unique_destination(root_path, source)
         blend_files = tuple(sorted({reference.blend_file for reference in refs}, key=lambda item: str(item).casefold()))
-        safe = destination.exists() is False and bool(blend_files)
         candidates.append(TextureRelocationCandidate(
             source=_relative(root_path, source),
             destination=_relative(root_path, destination),
             blend_files=blend_files,
             references=tuple(refs),
             reason=f"Referenced by {len(blend_files)} Blender file(s) but stored outside Assets/Textures.",
-            safe=safe,
+            safe=not destination.exists() and bool(blend_files),
         ))
     return candidates
 
@@ -135,17 +135,12 @@ def _backup_path(root: Path, blend: Path, stamp: str) -> Path:
     return root / ".eli_lab" / "backups" / stamp / relative
 
 
-def relocate_texture_candidate(
-    root: str | Path,
-    candidate: TextureRelocationCandidate,
-    blender_executable: str | None = None,
-) -> TextureRelocationResult:
+def relocate_texture_candidate(root: str | Path, candidate: TextureRelocationCandidate, blender_executable: str | None = None) -> TextureRelocationResult:
     """Apply one candidate transactionally, backing up affected .blend files first."""
     root_path = Path(root).expanduser().resolve()
     blender = blender_executable or find_blender()
     if not blender:
         raise FileNotFoundError("Blender executable was not found on PATH.")
-
     source = root_path / candidate.source
     destination = root_path / candidate.destination
     if not candidate.safe:
@@ -167,37 +162,24 @@ def relocate_texture_candidate(
             backup.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(blend, backup)
             backups.append((blend, backup))
-
         for blend_rel in candidate.blend_files:
             blend = root_path / blend_rel
             if _repair_blend(blend, source, destination, blender):
                 repaired.append(blend_rel)
-
         if set(repaired) != set(candidate.blend_files):
-            raise RuntimeError(
-                "Not every referencing Blender file confirmed the texture reference; "
-                "the operation was rolled back."
-            )
-
+            raise RuntimeError("Not every referencing Blender file confirmed the texture reference; the operation was rolled back.")
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(source), str(destination))
         moved = True
-
         manifest = backup_root / "relocation.json"
-        manifest.write_text(
-            json.dumps(
-                {
-                    "operation": "texture_relocation",
-                    "source": str(candidate.source),
-                    "destination": str(candidate.destination),
-                    "blend_files": [str(path) for path in candidate.blend_files],
-                    "timestamp": stamp,
-                },
-                indent=2,
-                ensure_ascii=False,
-            ) + "\n",
-            encoding="utf-8",
-        )
+        manifest.write_text(json.dumps({
+            "operation": "texture_relocation",
+            "source": str(candidate.source),
+            "destination": str(candidate.destination),
+            "blend_files": [str(path) for path in candidate.blend_files],
+            "timestamp": stamp,
+        }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        record_history(root_path, "texture_relocation", str(candidate.source), f"Moved to {candidate.destination}; repaired {len(repaired)} Blender file(s); backup={backup_root}")
         return TextureRelocationResult(candidate.source, candidate.destination, tuple(repaired), backup_root)
     except Exception:
         for blend, backup in reversed(backups):
