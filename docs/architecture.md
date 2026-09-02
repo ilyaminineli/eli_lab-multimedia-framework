@@ -1,53 +1,52 @@
 # Architecture
 
-The framework is moving from standalone Tkinter scripts to a layered Python package.
+The framework uses a deliberately simple root-level Python package. Reusable logic lives in `eli_lab/`; temporary legacy desktop programs live in `in_progress/`.
 
-## Target layers
+## Repository shape
 
 ```text
-Application layer
-    GUI / CLI / Blender integration
-            |
-Service layer
-    project / assets / automation / analysis
-            |
-Core layer
-    paths / config / filesystem / logging / errors / models
+eli_lab-multimedia-framework/
+├── eli_lab/
+│   ├── core/                 # paths, config, filesystem primitives
+│   ├── project/              # templates, metadata, docs, validation, Blender
+│   ├── assets/               # textures, optimization, Blender resources
+│   ├── automation/           # rename planning and repeatable operations
+│   ├── analysis/             # tasks and performance analysis
+│   └── app/                  # launcher and application registry
+├── in_progress/              # legacy GUI adapters being replaced
+├── tests/
+├── docs/
+├── pyproject.toml
+└── requirements.txt
 ```
 
-## Module mapping
+There is intentionally no `src/` directory. The package is directly visible at repository root.
 
-| Legacy tool | Target module |
-|---|---|
-| `advanced_template_system.py` | `eli_lab.project.templates` |
-| `project_metadata_integration.py` | `eli_lab.project.metadata` |
-| `project_documentation_generator.py` | `eli_lab.project.documentation` |
-| `project_validation.py` | `eli_lab.project.validation` |
-| `file_validation.py` | `eli_lab.project.validation` / `eli_lab.core.filesystem` |
-| `custom_file_renaming.py` | `eli_lab.automation.renamer` |
-| `texture_batch_converter.py` | `eli_lab.assets.textures` |
-| `texture_batch_optimising_tool.py` | `eli_lab.assets.optimization` |
-| `task_assigner.py` | `eli_lab.analysis.tasks` |
-| `historical_performance_analyzer.py` | `eli_lab.analysis.performance` |
-| `init.py` | `eli_lab.app.launcher` |
+## Dependency direction
 
-## Rules
+```text
+GUI / CLI
+   ↓
+Application adapters (`eli_lab.app`)
+   ↓
+Services (`project`, `assets`, `automation`, `analysis`)
+   ↓
+Core utilities (`eli_lab.core`)
+```
 
-1. Reusable logic must not depend on Tkinter.
-2. GUI code belongs in the application layer.
-3. Filesystem paths use `pathlib` and shared path/config services.
-4. Destructive asset operations require explicit user intent.
-5. Long-running GUI operations run in workers; Tk widgets are updated through the main event loop.
-6. New functionality goes under `src/eli_lab`, not as another root-level script.
-7. External executables are represented as configurable backends.
+Reusable services must not import Tkinter, display message boxes, or depend on the current working directory. Application code translates user actions into service calls and translates returned results into UI feedback.
 
-## Migration strategy
+## Legacy migration
 
-The legacy scripts remain temporarily as compatibility entry points. Each tool is migrated in small, testable steps:
+The files in `in_progress/` are temporary compatibility tools. They are not the architecture; they are migration staging.
 
-1. extract pure functions
-2. add unit tests
-3. move reusable code into the package
-4. make the legacy script call the package API
-5. move its GUI into `eli_lab.app`
-6. remove the legacy file once the replacement is verified
+The intended end state is for each tool to have a native adapter under `eli_lab.app.tools/`, after which the corresponding legacy file can be removed.
+
+## Safety rules
+
+1. Preview destructive changes when practical.
+2. Rename operations reject destination collisions.
+3. Filesystem paths use `pathlib.Path`.
+4. Long-running GUI work stays outside Tk's main thread.
+5. External executables are configurable backends.
+6. New reusable functionality goes under `eli_lab/`.
