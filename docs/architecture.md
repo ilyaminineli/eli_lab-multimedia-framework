@@ -6,14 +6,12 @@ The framework uses a layered Python package. GUI code is an adapter around reusa
 
 ```text
 eli_lab-multimedia-framework/
-├── assets/
-│   └── blender/templates/       # bundled Blender source assets
 ├── src/eli_lab/
 │   ├── core/                    # paths, config, filesystem primitives
-│   ├── project/                 # templates, metadata, docs, validation, Blender provisioning
-│   ├── assets/                  # texture conversion and optimization
-│   ├── automation/              # rename planning and other repeatable operations
-│   ├── analysis/                # tasks, reports, performance analysis
+│   ├── project/                 # templates, metadata, docs, validation, Blender
+│   ├── assets/                  # texture services + bundled Blender templates
+│   ├── automation/              # rename planning and other operations
+│   ├── analysis/                # tasks and performance analysis
 │   └── app/                     # GUI/CLI adapters and tool registry
 ├── tests/                       # service-level tests
 ├── docs/
