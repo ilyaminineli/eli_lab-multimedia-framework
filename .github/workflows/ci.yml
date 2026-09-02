@@ -17,6 +17,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+      - name: Install Qt runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
@@ -29,6 +33,8 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q .
       - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: pytest -q
       - name: Build package
         run: |
