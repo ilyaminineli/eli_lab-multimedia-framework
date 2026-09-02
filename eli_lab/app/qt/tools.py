@@ -3,21 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import date
 from pathlib import Path
-from typing import Callable
 
-from PySide6.QtCore import QDate, Qt
+from PySide6.QtCore import QDate
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDateEdit,
-    QDialog,
-    QDialogButtonBox,
-    QFileDialog,
     QFormLayout,
     QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -29,7 +23,6 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QSpinBox,
-    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
@@ -39,6 +32,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QHeaderView,
+    QFileDialog,
 )
 
 from eli_lab.analysis.performance import analyze_tasks
@@ -57,7 +51,6 @@ from eli_lab.automation.renamer import (
 from eli_lab.project.documentation import build_project_markdown, write_project_markdown
 from eli_lab.project.metadata import ProjectMetadata, load_metadata, save_metadata
 from eli_lab.project.structure import ProjectTemplate, create_project_structure
-from eli_lab.project.templates import ProjectStructure
 from eli_lab.project.validation import validate_project
 from eli_lab.validation.files import compare_directory, save_snapshot
 
@@ -114,8 +107,9 @@ class TemplateTool(ToolWidget, MessageMixin):
 
         name, ok = QInputDialog.getText(self, kind, f"{kind[:-1]} name:")
         if ok and name.strip():
-            store.append(name.strip())
-            widget.addItem(name.strip())
+            value = name.strip()
+            store.append(value)
+            widget.addItem(value)
 
     def _remove_name(self, store: list[str], widget: QListWidget) -> None:
         row = widget.currentRow()
@@ -129,7 +123,12 @@ class TemplateTool(ToolWidget, MessageMixin):
         if not parent or not name:
             self.failure("Parent directory and project name are required.")
             return
-        template = ProjectTemplate(project_name=name, characters=tuple(self.characters))
+        template = ProjectTemplate(
+            project_name=name,
+            characters=tuple(self.characters),
+            locations=tuple((item, ()) for item in self.locations),
+            assets=tuple((item, ()) for item in self.assets),
+        )
         try:
             created = create_project_structure(Path(parent), template=template)
         except Exception as exc:
@@ -160,8 +159,7 @@ class MetadataTool(ToolWidget, MessageMixin):
         root.addLayout(path)
         form = QFormLayout()
         for key, label in self.fields:
-            editor: QLineEdit | QPlainTextEdit
-            editor = QPlainTextEdit() if key in {"project_description", "acknowledgements", "crew"} else QLineEdit()
+            editor: QLineEdit | QPlainTextEdit = QPlainTextEdit() if key in {"project_description", "acknowledgements", "crew"} else QLineEdit()
             if isinstance(editor, QPlainTextEdit):
                 editor.setMaximumHeight(80)
             self.edits[key] = editor
@@ -318,21 +316,13 @@ class TextureConversionTool(ToolWidget, MessageMixin):
         self.replace = QCheckBox("Delete original files after successful conversion")
         root.addWidget(self.recursive)
         root.addWidget(self.replace)
-        self.progress = QProgressBar()
-        self.progress.setRange(0, 0)
-        self.progress.hide()
-        root.addWidget(self.progress)
-        self.log = QPlainTextEdit()
-        self.log.setReadOnly(True)
-        root.addWidget(self.log, 1)
-        run = QPushButton("Convert Textures")
-        run.clicked.connect(lambda: self._run(run))
-        root.addWidget(run)
+        self.progress = QProgressBar(); self.progress.setRange(0, 0); self.progress.hide(); root.addWidget(self.progress)
+        self.log = QPlainTextEdit(); self.log.setReadOnly(True); root.addWidget(self.log, 1)
+        run = QPushButton("Convert Textures"); run.clicked.connect(lambda: self._run(run)); root.addWidget(run)
         self.add_status(root)
 
     def _run(self, button: QPushButton) -> None:
-        self.log.clear()
-        self.progress.show()
+        self.log.clear(); self.progress.show()
         self.run_background(button, convert_directory, self._finished, self.directory.text(), recursive=self.recursive.isChecked(), replace_original=self.replace.isChecked())
 
     def _finished(self, results: list) -> None:
@@ -348,42 +338,28 @@ class TextureOptimizationTool(ToolWidget, MessageMixin):
         root = QVBoxLayout(self)
         self.file = QLineEdit()
         root.addWidget(path_row(self, "PNG file", self.file, file=True, filter="PNG files (*.png)"))
-        self.quality = QComboBox()
-        self.quality.addItems(QUALITY_PRESETS)
-        root.addWidget(QLabel("Quality preset"))
-        root.addWidget(self.quality)
-        run = QPushButton("Optimize PNG")
-        run.clicked.connect(lambda: self._run(run))
-        root.addWidget(run)
+        self.quality = QComboBox(); self.quality.addItems(QUALITY_PRESETS); root.addWidget(QLabel("Quality preset")); root.addWidget(self.quality)
+        run = QPushButton("Optimize PNG"); run.clicked.connect(lambda: self._run(run)); root.addWidget(run)
         self.add_status(root)
 
     def _run(self, button: QPushButton) -> None:
         self.run_background(button, optimize_png, self._finished, self.file.text(), quality=self.quality.currentText())
 
     def _finished(self, result) -> None:
-        if result.error:
-            self.failure(result.error)
-        elif result.skipped:
-            self.set_status("File skipped.")
-        else:
-            self.success(f"Optimized {result.source}")
+        if result.error: self.failure(result.error)
+        elif result.skipped: self.set_status("File skipped.")
+        else: self.success(f"Optimized {result.source}")
 
 
 class RenameTool(ToolWidget, MessageMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         root = QVBoxLayout(self)
-        self.files = QListWidget()
-        root.addWidget(self.files, 1)
-        choose = QPushButton("Choose Files")
-        choose.clicked.connect(self.choose_files)
-        root.addWidget(choose)
+        self.files = QListWidget(); root.addWidget(self.files, 1)
+        choose = QPushButton("Choose Files"); choose.clicked.connect(self.choose_files); root.addWidget(choose)
         controls = QGridLayout()
-        self.operation = QComboBox()
-        self.operation.addItems(["Replace text", "Upper case", "Lower case", "Title case", "Sentence case", "Change extension", "Add datetime", "Add autonumber"])
-        self.find = QLineEdit()
-        self.replace = QLineEdit()
-        self.extension = QLineEdit("png")
+        self.operation = QComboBox(); self.operation.addItems(["Replace text", "Upper case", "Lower case", "Title case", "Sentence case", "Change extension", "Add datetime", "Add autonumber"])
+        self.find = QLineEdit(); self.replace = QLineEdit(); self.extension = QLineEdit("png")
         self.position = QSpinBox(); self.position.setRange(1, 9999); self.position.setValue(3)
         controls.addWidget(QLabel("Operation"), 0, 0); controls.addWidget(self.operation, 0, 1)
         controls.addWidget(QLabel("Find"), 1, 0); controls.addWidget(self.find, 1, 1)
@@ -391,20 +367,16 @@ class RenameTool(ToolWidget, MessageMixin):
         controls.addWidget(QLabel("Extension"), 3, 0); controls.addWidget(self.extension, 3, 1)
         controls.addWidget(QLabel("Number padding"), 4, 0); controls.addWidget(self.position, 4, 1)
         root.addLayout(controls)
-        preview = QPushButton("Preview")
-        apply = QPushButton("Apply Rename")
-        preview.clicked.connect(self.preview)
-        apply.clicked.connect(self.apply)
+        preview = QPushButton("Preview"); apply = QPushButton("Apply Rename")
+        preview.clicked.connect(self.preview); apply.clicked.connect(self.apply)
         row = QHBoxLayout(); row.addWidget(preview); row.addWidget(apply); root.addLayout(row)
         self.table = QTableWidget(0, 2); self.table.setHorizontalHeaderLabels(["Source", "Destination"])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch); self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        root.addWidget(self.table, 1)
-        self.add_status(root)
+        root.addWidget(self.table, 1); self.add_status(root)
 
     def choose_files(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(self, "Select files")
-        self.files.clear()
-        self.files.addItems(paths)
+        self.files.clear(); self.files.addItems(paths)
 
     def transform(self, name: str, index: int = 0) -> str:
         op = self.operation.currentText()
@@ -417,13 +389,12 @@ class RenameTool(ToolWidget, MessageMixin):
         if op == "Add datetime": return add_datetime(name)
         return add_autonumber(name, index + 1, padding=self.position.value())
 
-    def plan(self):
+    def _operations(self):
         paths = [self.files.item(i).text() for i in range(self.files.count())]
-        return plan_renames(paths, lambda n: self.transform(n, paths.index(str(n)) if str(n) in paths else 0))
+        return [op for i, op in enumerate(plan_renames(paths, lambda name, i=i: self.transform(name, i))) if op.changed]
 
     def preview(self) -> None:
-        paths = [self.files.item(i).text() for i in range(self.files.count())]
-        operations = [op for i, op in enumerate(plan_renames(paths, lambda n, i=i: self.transform(n, i))) if op.changed]
+        operations = self._operations()
         self.table.setRowCount(len(operations))
         for row, op in enumerate(operations):
             self.table.setItem(row, 0, QTableWidgetItem(str(op.source)))
@@ -431,10 +402,8 @@ class RenameTool(ToolWidget, MessageMixin):
         self.set_status(f"Preview contains {len(operations)} changes.")
 
     def apply(self) -> None:
-        paths = [self.files.item(i).text() for i in range(self.files.count())]
-        operations = plan_renames(paths, lambda n, i=0: self.transform(n, i))
         try:
-            changed = apply_renames(operations)
+            changed = apply_renames(self._operations())
         except Exception as exc:
             self.failure(str(exc)); return
         self.success(f"Renamed {len(changed)} files.")
@@ -452,33 +421,24 @@ class TasksTool(ToolWidget, MessageMixin):
         self.description = QPlainTextEdit(); self.description.setMaximumHeight(100)
         form.addRow("Task", self.name); form.addRow("Artist", self.artist); form.addRow("Due date", self.due); form.addRow("Status", self.status); form.addRow("Description", self.description)
         root.addLayout(form)
-        save = QPushButton("Save Task"); save.clicked.connect(self.save)
-        reload_ = QPushButton("Reload Task List"); reload_.clicked.connect(self.reload)
+        save = QPushButton("Save Task"); save.clicked.connect(self.save); reload_ = QPushButton("Reload Task List"); reload_.clicked.connect(self.reload)
         row = QHBoxLayout(); row.addWidget(save); row.addWidget(reload_); root.addLayout(row)
-        self.tasks = QListWidget(); self.tasks.itemClicked.connect(self.load_selected)
-        root.addWidget(self.tasks, 1)
-        self.add_status(root)
+        self.tasks = QListWidget(); self.tasks.itemClicked.connect(self.load_selected); root.addWidget(self.tasks, 1); self.add_status(root)
 
     def reload(self) -> None:
         self.tasks.clear()
-        for path in list_tasks(self.directory.text()):
-            self.tasks.addItem(path.name)
+        for path in list_tasks(self.directory.text()): self.tasks.addItem(path.name)
         self.set_status(f"Loaded {self.tasks.count()} tasks.")
 
     def load_selected(self, item: QListWidgetItem) -> None:
-        try:
-            task = load_task(Path(self.directory.text()) / item.text())
-        except Exception as exc:
-            self.failure(str(exc)); return
-        self.name.setText(task.name); self.artist.setText(task.artist); self.due.setDate(QDate(task.due_date.year, task.due_date.month, task.due_date.day)); self.description.setPlainText(task.description)
-        self.status.setCurrentText(task.status)
+        try: task = load_task(Path(self.directory.text()) / item.text())
+        except Exception as exc: self.failure(str(exc)); return
+        self.name.setText(task.name); self.artist.setText(task.artist); self.due.setDate(QDate(task.due_date.year, task.due_date.month, task.due_date.day)); self.description.setPlainText(task.description); self.status.setCurrentText(task.status)
 
     def save(self) -> None:
         task = Task(self.name.text().strip(), self.artist.text().strip(), self.due.date().toPython(), self.status.currentText(), self.description.toPlainText())
-        try:
-            path = save_task(task, self.directory.text())
-        except Exception as exc:
-            self.failure(str(exc)); return
+        try: path = save_task(task, self.directory.text())
+        except Exception as exc: self.failure(str(exc)); return
         self.success(f"Saved {path}"); self.reload()
 
 
@@ -488,17 +448,14 @@ class PerformanceTool(ToolWidget, MessageMixin):
         root = QVBoxLayout(self)
         self.directory = QLineEdit(); root.addWidget(path_row(self, "Project directory", self.directory))
         run = QPushButton("Analyze Tasks"); run.clicked.connect(self.analyze); root.addWidget(run)
-        self.output = QPlainTextEdit(); self.output.setReadOnly(True); root.addWidget(self.output, 1)
-        self.add_status(root)
+        self.output = QPlainTextEdit(); self.output.setReadOnly(True); root.addWidget(self.output, 1); self.add_status(root)
 
     def analyze(self) -> None:
         mappings = []
         try:
-            for path in list_tasks(self.directory.text()):
-                mappings.append(load_task(path).to_mapping())
+            for path in list_tasks(self.directory.text()): mappings.append(load_task(path).to_mapping())
             report = analyze_tasks(mappings)
-        except Exception as exc:
-            self.failure(str(exc)); return
+        except Exception as exc: self.failure(str(exc)); return
         lines = [f"Average days from due date: {report.average_days_from_due:.2f}", "", "Tasks by artist:"]
         lines.extend(f"  {artist}: {count}" for artist, count in report.task_counts_by_artist.items())
         lines.extend(["", "Common task names:", *[f"  {name}" for name in report.common_task_names]])
