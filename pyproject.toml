@@ -21,6 +21,9 @@ dependencies = [
     "tkcalendar>=1.6.1,<2",
 ]
 
+[project.scripts]
+eli-lab = "eli_lab.app.launcher:main"
+
 [tool.setuptools]
 include-package-data = true
 
