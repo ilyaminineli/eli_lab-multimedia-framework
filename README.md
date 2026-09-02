@@ -1,44 +1,61 @@
 # ELI LAB Multimedia Framework
 
-A Python-based toolkit for organizing, validating, and automating the ELI LAB multimedia production pipeline.
+A Python toolkit for organizing, validating, transforming, and automating the ELI LAB multimedia production pipeline.
 
-> **Status:** active refactor toward a modular `src/eli_lab` framework. The existing GUI tools are being migrated incrementally rather than rewritten all at once.
+> **Status:** active modularization. Reusable services now live under `src/eli_lab`; the desktop tools are being migrated incrementally as compatibility adapters.
 
 ## What it does
 
-The framework currently contains utilities for:
+The framework provides services and desktop tools for:
 
-- project structure and template generation
-- project metadata and documentation
-- file validation and project validation
-- batch file renaming
-- texture conversion and optimization
-- task/performance analysis
-- a desktop launcher for the existing tools
-- Blender project templates
+- project templates, metadata, documentation, and validation
+- Blender template provisioning
+- file validation and filesystem analysis
+- batch file renaming with previewable rename plans
+- texture conversion and `pngquant` optimization
+- task storage and historical performance analysis
+- a desktop tool launcher
 
-## Architecture
-
-The repository is being reorganized around a shared core:
+## Repository structure
 
 ```text
 eli_lab-multimedia-framework/
-├── src/eli_lab/
-│   ├── core/          # paths, configuration, shared infrastructure
-│   ├── project/       # project structure, metadata, validation
-│   ├── assets/        # textures, Blender assets, file operations
-│   ├── automation/    # repeatable production operations
-│   ├── analysis/      # reporting and analysis tools
-│   └── app/           # GUI/CLI frontends
 ├── assets/
-│   └── blender/
-│       └── templates/
-├── tests/
+│   └── blender/templates/       # bundled Blender source files
+├── src/eli_lab/
+│   ├── core/                    # paths, config, filesystem helpers
+│   ├── project/                 # templates, metadata, docs, validation
+│   ├── assets/                  # texture conversion and optimization
+│   ├── automation/              # rename planning and other operations
+│   ├── analysis/                # task and performance services
+│   └── app/                     # GUI/CLI adapters and tool registry
+├── tests/                       # service-level tests
 ├── docs/
 └── .github/
 ```
 
-The current root-level scripts are legacy entry points. They will be moved into the package in later refactor steps while keeping their behavior intact.
+Root-level Python files are temporary compatibility entry points. New reusable functionality belongs under `src/eli_lab`.
+
+## Standard project layout
+
+New projects use a predictable hierarchy:
+
+```text
+project/
+├── assets/
+│   ├── characters/
+│   ├── locations/
+│   ├── models/
+│   └── textures/
+├── scenes/
+├── source/
+├── renders/
+├── exports/
+├── docs/
+└── tasks/
+```
+
+Named characters, locations, and model assets are nested under their semantic asset category instead of being spread across project-root folders.
 
 ## Installation
 
@@ -74,34 +91,13 @@ python -m pip install -e .
 
 ## External tools
 
-Texture optimization can use `pngquant`. It is an external executable rather than a Python dependency and must be available on `PATH` when the optimizer is used.
+Texture optimization can use `pngquant`. It is an external executable rather than a Python dependency and must be available on `PATH` when optimization is used.
 
-## Development
+## Development principles
 
-The project is being stabilized in stages:
+Keep reusable logic independent of Tkinter. Use `pathlib.Path` for filesystem operations, return structured results from services, preview destructive changes, and keep GUI updates on Tk's main thread.
 
-1. remove machine-specific paths and obsolete build files
-2. normalize dependency and packaging metadata
-3. add CI and Dependabot
-4. move the tools into `src/eli_lab`
-5. separate GUI code from reusable framework logic
-6. introduce shared configuration, logging, errors, and filesystem services
-7. add automated tests
-8. add a unified CLI and application registry
-9. improve packaging and release automation
-
-Do not add new hard-coded developer paths or new standalone root-level utilities. New reusable functionality should be added under `src/eli_lab`.
-
-## Safety principles
-
-Production tools should prefer:
-
-- preview before destructive operations
-- explicit confirmation before deleting or replacing source files
-- backups or reversible operations where practical
-- platform-independent paths via `pathlib`
-- structured logging instead of `print()` for framework operations
-- GUI updates on Tkinter's main thread
+See [docs/architecture.md](docs/architecture.md) for the migration map and dependency rules.
 
 ## License
 
