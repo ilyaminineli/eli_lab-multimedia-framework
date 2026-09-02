@@ -24,9 +24,9 @@ def ensure_entity_metadata(root: str | Path, entity: ProjectEntity) -> EntityMet
     metadata = load_entity_metadata(Path(root) / entity.path)
     if not metadata.description:
         metadata.description = description_seed(entity)
-    if not metadata.name:
+    if not metadata.name or metadata.name == "asset":
         metadata.name = entity.name
-    if not metadata.kind:
+    if not metadata.kind or (metadata.kind == "asset" and entity.kind != "asset"):
         metadata.kind = entity.kind
     return metadata
 
@@ -40,7 +40,10 @@ def write_entity_markdown(root: str | Path, entity: ProjectEntity) -> Path:
     root_path = Path(root).expanduser().resolve()
     metadata = ensure_entity_metadata(root_path, entity)
     metadata_path = save_entity_metadata(root_path / entity.path, metadata)
-    output = metadata_path.parent / "README.md"
+    if (root_path / entity.path).is_file():
+        output = (root_path / entity.path).with_suffix(".md")
+    else:
+        output = metadata_path.parent / "README.md"
     output.write_text(build_entity_markdown(entity, metadata), encoding="utf-8")
     return output
 
