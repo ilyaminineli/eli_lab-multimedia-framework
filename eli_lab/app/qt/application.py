@@ -8,25 +8,12 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette
-from PySide6.QtWidgets import (
-    QApplication,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QScrollArea,
-    QStackedWidget,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QApplication, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QScrollArea, QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 from ..registry import TOOLS
+from .audits import AuditTool
 from .tools import create_tool_widget
 from .workspace import WorkspaceTool
-
 
 APP_STYLE = """
 QMainWindow { background: #17191d; }
@@ -113,24 +100,20 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(root)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
         sidebar = QFrame(); sidebar.setObjectName("Sidebar"); sidebar.setFixedWidth(245)
         sidebar_layout = QVBoxLayout(sidebar); sidebar_layout.setContentsMargins(16, 16, 12, 14); sidebar_layout.setSpacing(8)
         brand = QLabel("eli_lab"); brand.setObjectName("Brand"); sidebar_layout.addWidget(brand)
         tagline = QLabel("MULTIMEDIA FRAMEWORK"); tagline.setObjectName("Eyebrow"); sidebar_layout.addWidget(tagline)
         sidebar_layout.addSpacing(8); sidebar_layout.addWidget(self.search); sidebar_layout.addWidget(self.navigation, 1)
-
         categories: dict[str, QTreeWidgetItem] = {}
         for index, tool in enumerate(TOOLS):
             category = categories.get(tool.category)
             if category is None:
-                category = QTreeWidgetItem([tool.category.upper()])
-                category.setFlags(category.flags() & ~Qt.ItemIsSelectable)
+                category = QTreeWidgetItem([tool.category.upper()]); category.setFlags(category.flags() & ~Qt.ItemIsSelectable)
                 self.navigation.addTopLevelItem(category); categories[tool.category] = category
             child = QTreeWidgetItem([tool.name]); child.setData(0, Qt.UserRole, index); child.setToolTip(0, tool.description)
             category.addChild(child); self.stack.addWidget(self._make_tool_page(tool.key))
         for category in categories.values(): category.setExpanded(True)
-
         content = QFrame(); content_layout = QVBoxLayout(content); content_layout.setContentsMargins(0, 0, 0, 0); content_layout.setSpacing(0)
         header = QFrame(); header.setObjectName("ContentHeader"); header_layout = QVBoxLayout(header); header_layout.setContentsMargins(28, 20, 28, 18); header_layout.setSpacing(3)
         self.page_eyebrow = QLabel(); self.page_eyebrow.setObjectName("Eyebrow")
@@ -142,7 +125,9 @@ class MainWindow(QMainWindow):
         first = self.navigation.topLevelItem(0).child(0); self.navigation.setCurrentItem(first); self._select_tool(first, 0)
 
     def _make_tool_page(self, key: str) -> QWidget:
-        tool = WorkspaceTool(self) if key == "workspace" else create_tool_widget(key, self)
+        if key == "workspace": tool = WorkspaceTool(self)
+        elif key == "audit": tool = AuditTool(self)
+        else: tool = create_tool_widget(key, self)
         wrapper = QWidget(); wrapper.setObjectName("ToolPage"); outer = QVBoxLayout(wrapper); outer.setContentsMargins(24, 22, 24, 22); outer.setSpacing(0)
         scroll = QScrollArea(); scroll.setObjectName("ToolScroll"); scroll.setWidgetResizable(True); scroll.setFrameShape(QFrame.NoFrame); scroll.setWidget(tool)
         outer.addWidget(scroll); return wrapper
