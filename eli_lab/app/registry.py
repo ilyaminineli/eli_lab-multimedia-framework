@@ -15,11 +15,12 @@ class ToolDefinition:
 
 TOOLS: tuple[ToolDefinition, ...] = (
     ToolDefinition("workspace", "Project Workspace", "Project", "Open, scan, edit, normalize and document an existing production project."),
-    ToolDefinition("template", "Advanced Template System", "Project", "Create standardized project trees and entity folders."),
+    ToolDefinition("template", "Project Generator", "Project", "Create standardized project trees and entity folders from a production preset."),
     ToolDefinition("metadata", "Project Metadata", "Project", "Create and edit canonical project metadata."),
-    ToolDefinition("documentation", "Project Documentation", "Project", "Generate project README documentation."),
+    ToolDefinition("documentation", "Documentation", "Project", "Generate preset-based project and entity documentation."),
+    ToolDefinition("audit", "Production Audit", "Pipeline", "Audit structure, entity records, texture sets and dependency relationships."),
     ToolDefinition("file_validation", "File Validation", "Validation", "Compare a project against a saved file snapshot."),
-    ToolDefinition("project_validation", "Project Validation", "Validation", "Validate required project directories."),
+    ToolDefinition("project_validation", "Structure Validation", "Validation", "Validate required project directories."),
     ToolDefinition("texture_conversion", "Texture Conversion", "Assets", "Convert supported source textures to PNG."),
     ToolDefinition("texture_optimization", "Texture Optimization", "Assets", "Optimize PNG textures with pngquant."),
     ToolDefinition("renaming", "File Renaming", "Automation", "Preview and apply safe batch filename operations."),
