@@ -85,11 +85,11 @@ class ToolWidget(QWidget):
         worker.signals.finished.connect(lambda: button.setEnabled(True))
         self.thread_pool.start(worker)
 
-    def show_error(self, message: str, title: str = "ELI LAB") -> None:
+    def show_error(self, message: str, title: str = "eli_lab") -> None:
         self.set_status(f"Error: {message}")
         QMessageBox.critical(self, title, message)
 
-    def show_info(self, message: str, title: str = "ELI LAB") -> None:
+    def show_info(self, message: str, title: str = "eli_lab") -> None:
         self.set_status(message)
         QMessageBox.information(self, title, message)
 

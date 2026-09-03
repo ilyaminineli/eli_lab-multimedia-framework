@@ -7,7 +7,6 @@ from eli_lab.app.qt.texture_relocation import TextureRelocationTool
 from eli_lab.app.qt.workspace import WorkspaceTool
 from eli_lab.app.qt.tools import TOOL_WIDGETS, create_tool_widget
 
-
 SPECIAL_WIDGETS = {
     "workspace": WorkspaceTool,
     "audit": AuditTool,

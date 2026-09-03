@@ -1,6 +1,6 @@
-# ELI LAB Production Pipeline
+# eli_lab Production Pipeline
 
-ELI LAB treats a project as a living production workspace rather than a fixed folder template.
+eli_lab treats a project as a living production workspace rather than a fixed folder template.
 
 ## Workflow
 

@@ -31,7 +31,9 @@ def is_quantized(path: str | Path) -> bool:
         return False
 
 
-def optimize_png(path: str | Path, *, quality: str = "medium", command: str = "pngquant") -> OptimizationResult:
+def optimize_png(
+    path: str | Path, *, quality: str = "medium", command: str = "pngquant"
+) -> OptimizationResult:
     source = Path(path).expanduser().resolve()
     if not source.is_file() or source.suffix.lower() != ".png":
         return OptimizationResult(source, optimized=False, skipped=True)
@@ -40,11 +42,22 @@ def optimize_png(path: str | Path, *, quality: str = "medium", command: str = "p
     if quality not in QUALITY_PRESETS:
         raise ValueError(f"unknown quality preset: {quality}")
     if shutil.which(command) is None:
-        return OptimizationResult(source, optimized=False, error=f"{command} is not available on PATH")
+        return OptimizationResult(
+            source, optimized=False, error=f"{command} is not available on PATH"
+        )
 
     try:
         result = subprocess.run(
-            [command, "--quality", QUALITY_PRESETS[quality], "--force", "--ext", ".png", "--skip-if-larger", str(source)],
+            [
+                command,
+                "--quality",
+                QUALITY_PRESETS[quality],
+                "--force",
+                "--ext",
+                ".png",
+                "--skip-if-larger",
+                str(source),
+            ],
             check=False,
             capture_output=True,
             text=True,
@@ -53,7 +66,11 @@ def optimize_png(path: str | Path, *, quality: str = "medium", command: str = "p
         return OptimizationResult(source, optimized=False, error=str(exc))
 
     if result.returncode != 0:
-        return OptimizationResult(source, optimized=False, error=result.stderr.strip() or f"pngquant exited with {result.returncode}")
+        return OptimizationResult(
+            source,
+            optimized=False,
+            error=result.stderr.strip() or f"pngquant exited with {result.returncode}",
+        )
     return OptimizationResult(source, optimized=True)
 
 

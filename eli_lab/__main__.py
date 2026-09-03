@@ -1,4 +1,4 @@
-"""Run the ELI LAB desktop launcher with ``python -m eli_lab``."""
+"""Run the eli_lab desktop launcher with ``python -m eli_lab``."""
 
 from .app.launcher import main
 

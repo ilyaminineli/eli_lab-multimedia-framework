@@ -85,7 +85,13 @@ def _create_directory(path: Path, created: list[Path]) -> None:
         created.append(path)
 
 
-def _create_entity(root: Path, relative_root: str, name: str, subfolders: tuple[str, ...], created: list[Path]) -> None:
+def _create_entity(
+    root: Path,
+    relative_root: str,
+    name: str,
+    subfolders: tuple[str, ...],
+    created: list[Path],
+) -> None:
     entity_root = root / relative_root / name
     _create_directory(entity_root, created)
     for subfolder in subfolders:
@@ -117,13 +123,27 @@ def create_project_structure(
     is_daly = any(folder == "Scenes/Main Scenes" for folder in selected.folders)
     if is_daly:
         for name in template.characters:
-            _create_entity(root_path, "Characters", name, ("references", "textures"), created)
+            _create_entity(
+                root_path, "Characters", name, ("references", "textures"), created
+            )
         for name, subfolders in template.locations:
-            _create_entity(root_path, "Locations", name, subfolders or ("assets", "textures"), created)
+            _create_entity(
+                root_path,
+                "Locations",
+                name,
+                subfolders or ("assets", "textures"),
+                created,
+            )
         for name, subfolders in template.assets:
             _create_entity(root_path, "Assets", name, subfolders or (), created)
         for name, subfolders in template.scenes:
-            _create_entity(root_path, "Scenes/Main Scenes", name, subfolders or ("assets", "textures"), created)
+            _create_entity(
+                root_path,
+                "Scenes/Main Scenes",
+                name,
+                subfolders or ("assets", "textures"),
+                created,
+            )
         for name in template.test_scenes:
             _create_entity(root_path, "Test Scenes", name, (), created)
     else:

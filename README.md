@@ -1,6 +1,6 @@
 # eli_lab Multimedia Framework
 
-A Python toolkit for organizing, validating, transforming, documenting, and automating the ELI LAB multimedia production pipeline.
+A Python toolkit for organizing, validating, transforming, documenting, and automating the eli_lab multimedia production pipeline.
 
 > **Status:** PySide6 production workspace. Reusable services live directly in `eli_lab/`, and the native desktop interface is implemented in `eli_lab/app/qt/`.
 
@@ -43,7 +43,7 @@ VALIDATE / OPTIMIZE / DIAGNOSE
 CONTINUE PRODUCTION
 ```
 
-Existing projects do not have to already follow the standard. ELI LAB recognizes canonical, legacy, mixed, and unknown layouts and proposes only high-confidence normalization moves automatically.
+Existing projects do not have to already follow the standard. eli_lab recognizes canonical, legacy, mixed, and unknown layouts and proposes only high-confidence normalization moves automatically.
 
 ## Repository structure
 

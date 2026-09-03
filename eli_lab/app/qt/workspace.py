@@ -135,7 +135,7 @@ class WorkspaceTool(ToolWidget):
             summary = scan_workspace(root)
             self.root_path = root
         except Exception as exc:
-            QMessageBox.critical(self, "ELI LAB", str(exc))
+            QMessageBox.critical(self, "eli_lab", str(exc))
             return
         counts = ", ".join(f"{k}: {v}" for k, v in sorted(summary.counts.items())) or "No recognized entities"
         high = self._high_confidence_operations()

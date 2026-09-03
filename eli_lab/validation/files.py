@@ -78,7 +78,9 @@ def compare_directory(root: str | Path) -> dict[str, str]:
         old = previous.get(relative)
         if old is None:
             status[relative] = "new"
-        elif details.get("size") != old.get("size") or details.get("modified") != old.get("modified"):
+        elif details.get("size") != old.get("size") or details.get(
+            "modified"
+        ) != old.get("modified"):
             status[relative] = "modified"
 
     for relative in previous:

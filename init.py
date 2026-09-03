@@ -1,4 +1,4 @@
-"""Development launcher for the ELI LAB Multimedia Framework.
+"""Development launcher for the eli_lab Multimedia Framework.
 
 Run from the repository root with:
 

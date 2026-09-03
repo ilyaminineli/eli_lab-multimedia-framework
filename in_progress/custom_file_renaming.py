@@ -3,4 +3,4 @@ from eli_lab.app.qt.tools import RenameTool, run_standalone
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_standalone(RenameTool, "ELI LAB — File Renaming"))
+    raise SystemExit(run_standalone(RenameTool, "eli_lab — File Renaming"))

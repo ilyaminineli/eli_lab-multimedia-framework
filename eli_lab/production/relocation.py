@@ -7,8 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-
-RELOCATE_SCRIPT = r'''
+RELOCATE_SCRIPT = r"""
 import bpy
 import os
 import sys
@@ -30,10 +29,15 @@ for image in bpy.data.images:
 if changed:
     bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
 print('ELI_LAB_RELOCATED=' + ('1' if changed else '0'))
-'''
+"""
 
 
-def repair_blend_texture_reference(blend_file: str | Path, old_path: str | Path, new_path: str | Path, blender_executable: str) -> bool:
+def repair_blend_texture_reference(
+    blend_file: str | Path,
+    old_path: str | Path,
+    new_path: str | Path,
+    blender_executable: str,
+) -> bool:
     """Rewrite an image path inside one .blend and save it in place."""
     blend = Path(blend_file).expanduser().resolve()
     old = Path(old_path).expanduser().resolve()
@@ -42,21 +46,46 @@ def repair_blend_texture_reference(blend_file: str | Path, old_path: str | Path,
         script = Path(temp_dir) / "relocate.py"
         script.write_text(RELOCATE_SCRIPT, encoding="utf-8")
         process = subprocess.run(
-            [blender_executable, "--background", str(blend), "--python", str(script), "--", str(old), str(new)],
+            [
+                blender_executable,
+                "--background",
+                str(blend),
+                "--python",
+                str(script),
+                "--",
+                str(old),
+                str(new),
+            ],
             capture_output=True,
             text=True,
             check=False,
         )
     if process.returncode != 0:
-        raise RuntimeError(f"Blender relocation failed: {process.stderr.strip()[-2000:]}")
+        raise RuntimeError(
+            f"Blender relocation failed: {process.stderr.strip()[-2000:]}"
+        )
     return "ELI_LAB_RELOCATED=1" in process.stdout
 
 
-def relocate_texture_with_references(root: str | Path, source: str | Path, destination: str | Path, blend_files: list[str | Path], blender_executable: str) -> list[Path]:
+def relocate_texture_with_references(
+    root: str | Path,
+    source: str | Path,
+    destination: str | Path,
+    blend_files: list[str | Path],
+    blender_executable: str,
+) -> list[Path]:
     """Move one texture and repair every known Blender reference before finalizing."""
     root_path = Path(root).expanduser().resolve()
-    source_path = (root_path / source).resolve() if not Path(source).is_absolute() else Path(source).resolve()
-    destination_path = (root_path / destination).resolve() if not Path(destination).is_absolute() else Path(destination).resolve()
+    source_path = (
+        (root_path / source).resolve()
+        if not Path(source).is_absolute()
+        else Path(source).resolve()
+    )
+    destination_path = (
+        (root_path / destination).resolve()
+        if not Path(destination).is_absolute()
+        else Path(destination).resolve()
+    )
     if not source_path.exists():
         raise FileNotFoundError(source_path)
     if destination_path.exists():
@@ -64,8 +93,14 @@ def relocate_texture_with_references(root: str | Path, source: str | Path, desti
 
     changed: list[Path] = []
     for blend in blend_files:
-        blend_path = (root_path / blend).resolve() if not Path(blend).is_absolute() else Path(blend).resolve()
-        if repair_blend_texture_reference(blend_path, source_path, destination_path, blender_executable):
+        blend_path = (
+            (root_path / blend).resolve()
+            if not Path(blend).is_absolute()
+            else Path(blend).resolve()
+        )
+        if repair_blend_texture_reference(
+            blend_path, source_path, destination_path, blender_executable
+        ):
             changed.append(blend_path)
 
     destination_path.parent.mkdir(parents=True, exist_ok=True)

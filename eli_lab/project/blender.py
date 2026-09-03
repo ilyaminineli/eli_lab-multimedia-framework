@@ -14,7 +14,9 @@ TEMPLATE_FILES = {
 }
 
 
-def provision_blender_file(directory: str | Path, category: str, *, overwrite: bool = False) -> Path | None:
+def provision_blender_file(
+    directory: str | Path, category: str, *, overwrite: bool = False
+) -> Path | None:
     """Copy the template for *category* into a leaf asset directory."""
     target_dir = Path(directory).expanduser().resolve()
     if not target_dir.is_dir():

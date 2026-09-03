@@ -1,4 +1,4 @@
-"""PySide6 desktop application layer for ELI LAB."""
+"""PySide6 desktop application layer for eli_lab."""
 
 from .application import main
 

@@ -37,7 +37,9 @@ class Task:
 
 
 def task_path(project_dir: str | Path, name: str) -> Path:
-    return Path(project_dir).expanduser().resolve() / f"{TASK_PREFIX}{name}{TASK_SUFFIX}"
+    return (
+        Path(project_dir).expanduser().resolve() / f"{TASK_PREFIX}{name}{TASK_SUFFIX}"
+    )
 
 
 def save_task(task: Task, project_dir: str | Path) -> Path:
@@ -77,4 +79,7 @@ def list_tasks(project_dir: str | Path) -> list[Path]:
     directory = Path(project_dir).expanduser().resolve()
     if not directory.is_dir():
         return []
-    return sorted(directory.glob(f"{TASK_PREFIX}*{TASK_SUFFIX}"), key=lambda path: path.name.lower())
+    return sorted(
+        directory.glob(f"{TASK_PREFIX}*{TASK_SUFFIX}"),
+        key=lambda path: path.name.lower(),
+    )

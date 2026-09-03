@@ -3,4 +3,4 @@ from eli_lab.app.qt.tools import TextureOptimizationTool, run_standalone
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_standalone(TextureOptimizationTool, "ELI LAB — Texture Optimization"))
+    raise SystemExit(run_standalone(TextureOptimizationTool, "eli_lab — Texture Optimization"))

@@ -45,7 +45,12 @@ def load_metadata(directory: str | Path) -> ProjectMetadata:
         data = json.load(handle)
     if not isinstance(data, dict):
         raise ValueError(f"Metadata must be a JSON object: {path}")
-    return ProjectMetadata(**{field: data.get(field, default) for field, default in asdict(ProjectMetadata("", "")).items()})
+    return ProjectMetadata(
+        **{
+            field: data.get(field, default)
+            for field, default in asdict(ProjectMetadata("", "")).items()
+        }
+    )
 
 
 def save_metadata(metadata: ProjectMetadata, directory: str | Path) -> Path:

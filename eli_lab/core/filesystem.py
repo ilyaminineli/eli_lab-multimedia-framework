@@ -19,7 +19,9 @@ def iter_files(root: str | Path, *, recursive: bool = True) -> Iterator[Path]:
         raise NotADirectoryError(root_path)
 
     paths = root_path.rglob("*") if recursive else root_path.glob("*")
-    for path in sorted((item for item in paths if item.is_file()), key=lambda p: p.as_posix().lower()):
+    for path in sorted(
+        (item for item in paths if item.is_file()), key=lambda p: p.as_posix().lower()
+    ):
         yield path
 
 

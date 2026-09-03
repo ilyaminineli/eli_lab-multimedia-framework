@@ -1,6 +1,6 @@
 # Architecture
 
-ELI LAB is a project-first production pipeline. The filesystem remains the source of production files, while the framework builds a semantic layer on top of it for discovery, editing, normalization, validation, and documentation.
+eli_lab is a project-first production pipeline. The filesystem remains the source of production files, while the framework builds a semantic layer on top of it for discovery, editing, normalization, validation, and documentation.
 
 ## Layout
 
@@ -26,7 +26,7 @@ A production project is understood through six concepts:
 
 ## Adaptive projects
 
-ELI LAB does not require an existing project to already be canonical. The migration engine scans the tree, detects canonical/legacy/mixed profiles, identifies loose Blender files, loose textures, UUID-style asset folders, and scene-local asset directories, and produces a reviewable normalization plan. Only high-confidence operations are applied automatically; existing destinations are never overwritten.
+eli_lab does not require an existing project to already be canonical. The migration engine scans the tree, detects canonical/legacy/mixed profiles, identifies loose Blender files, loose textures, UUID-style asset folders, and scene-local asset directories, and produces a reviewable normalization plan. Only high-confidence operations are applied automatically; existing destinations are never overwritten.
 
 ## Standard generator
 

@@ -1,4 +1,4 @@
-"""Semantic entities discovered inside an ELI LAB production project."""
+"""Semantic entities discovered inside an eli_lab production project."""
 
 from __future__ import annotations
 
@@ -36,7 +36,9 @@ class ProjectEntity:
     def primary_file(self) -> Path | None:
         if not self.files:
             return None
-        preferred = [f for f in self.files if f.suffix.lower() in {".blend", ".md", ".py"}]
+        preferred = [
+            f for f in self.files if f.suffix.lower() in {".blend", ".md", ".py"}
+        ]
         return preferred[0] if preferred else self.files[0]
 
     @property
@@ -52,20 +54,29 @@ def entity_kind_for_directory(directory: str) -> str | None:
 
 
 def _files_under(path: Path) -> list[Path]:
-    return sorted((p for p in path.rglob("*") if p.is_file()), key=lambda p: p.as_posix().casefold())
+    return sorted(
+        (p for p in path.rglob("*") if p.is_file()),
+        key=lambda p: p.as_posix().casefold(),
+    )
 
 
-def _add_directory_children(root: Path, parent: Path, kind: str, entities: list[ProjectEntity]) -> None:
+def _add_directory_children(
+    root: Path, parent: Path, kind: str, entities: list[ProjectEntity]
+) -> None:
     if not parent.is_dir():
         return
     for child in sorted(parent.iterdir(), key=lambda p: p.name.casefold()):
         if child.name.startswith(".") or not child.is_dir():
             continue
-        entities.append(ProjectEntity(child.name, kind, child.relative_to(root), _files_under(child)))
+        entities.append(
+            ProjectEntity(
+                child.name, kind, child.relative_to(root), _files_under(child)
+            )
+        )
 
 
 def discover_entities(root: str | Path) -> list[ProjectEntity]:
-    """Discover entities across canonical and legacy ELI LAB hierarchy variants."""
+    """Discover entities across canonical and legacy eli_lab hierarchy variants."""
     root_path = Path(root).expanduser().resolve()
     if not root_path.exists():
         raise FileNotFoundError(root_path)
@@ -73,10 +84,17 @@ def discover_entities(root: str | Path) -> list[ProjectEntity]:
     entities: list[ProjectEntity] = []
     _add_directory_children(root_path, root_path / "Characters", "character", entities)
     _add_directory_children(root_path, root_path / "Locations", "location", entities)
-    _add_directory_children(root_path, root_path / "Test Scenes", "test_scene", entities)
+    _add_directory_children(
+        root_path, root_path / "Test Scenes", "test_scene", entities
+    )
 
     scenes = root_path / "Scenes" / "Main Scenes"
-    _add_directory_children(root_path, scenes if scenes.is_dir() else root_path / "Scenes", "scene", entities)
+    _add_directory_children(
+        root_path,
+        scenes if scenes.is_dir() else root_path / "Scenes",
+        "scene",
+        entities,
+    )
 
     assets = root_path / "Assets"
     _add_directory_children(root_path, assets, "asset", entities)
@@ -87,9 +105,23 @@ def discover_entities(root: str | Path) -> list[ProjectEntity]:
     if scripts.is_dir():
         for child in sorted(scripts.iterdir(), key=lambda p: p.name.casefold()):
             if child.is_file() and child.suffix.casefold() == ".py":
-                entities.append(ProjectEntity(child.stem, "script", child.relative_to(root_path), [child.relative_to(root_path)]))
+                entities.append(
+                    ProjectEntity(
+                        child.stem,
+                        "script",
+                        child.relative_to(root_path),
+                        [child.relative_to(root_path)],
+                    )
+                )
             elif child.is_dir() and not child.name.startswith("."):
-                entities.append(ProjectEntity(child.name, "script", child.relative_to(root_path), _files_under(child)))
+                entities.append(
+                    ProjectEntity(
+                        child.name,
+                        "script",
+                        child.relative_to(root_path),
+                        _files_under(child),
+                    )
+                )
 
     return entities
 
@@ -99,7 +131,11 @@ def discover_project_files(root: str | Path) -> list[Path]:
     root_path = Path(root).expanduser().resolve()
     ignored = {".git", ".venv", "__pycache__", ".pytest_cache", ".eli_lab"}
     return sorted(
-        (p.relative_to(root_path) for p in root_path.rglob("*") if p.is_file() and not any(part in ignored for part in p.parts)),
+        (
+            p.relative_to(root_path)
+            for p in root_path.rglob("*")
+            if p.is_file() and not any(part in ignored for part in p.parts)
+        ),
         key=lambda p: p.as_posix().casefold(),
     )
 

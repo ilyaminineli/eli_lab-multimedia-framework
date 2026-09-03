@@ -2,7 +2,18 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+    QHeaderView,
+)
 
 from eli_lab.production.blender_inspection import find_blender
 from eli_lab.production.texture_relocation import (
@@ -33,16 +44,28 @@ class TextureRelocationTool(ToolWidget):
         row.addWidget(scan)
         root.addLayout(row)
 
-        self.summary = QLabel("Scan a project to find referenced textures outside Assets/Textures.")
+        self.summary = QLabel(
+            "Scan a project to find referenced textures outside Assets/Textures."
+        )
         self.summary.setWordWrap(True)
         root.addWidget(self.summary)
 
         self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["Texture", "Suggested location", "Used by Blender files", "Status"])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.setHorizontalHeaderLabels(
+            ["Texture", "Suggested location", "Used by Blender files", "Status"]
+        )
+        self.table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.table.horizontalHeader().setSectionResizeMode(
+            1, QHeaderView.ResizeMode.Stretch
+        )
+        self.table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.table.horizontalHeader().setSectionResizeMode(
+            3, QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         root.addWidget(self.table, 1)
@@ -68,13 +91,28 @@ class TextureRelocationTool(ToolWidget):
             return
         blender = find_blender()
         if not blender:
-            self.show_error("Blender was not found on PATH. Blender-aware relocation requires a local Blender executable.")
+            self.show_error(
+                "Blender was not found on PATH. Blender-aware relocation requires a local Blender executable."
+            )
             return
-        scan_button = next((button for button in self.findChildren(QPushButton) if button.text() == "Scan"), None)
+        scan_button = next(
+            (
+                button
+                for button in self.findChildren(QPushButton)
+                if button.text() == "Scan"
+            ),
+            None,
+        )
         if scan_button is None:
             self.show_error("Internal UI error: Scan button not found.")
             return
-        self.run_background(scan_button, plan_referenced_texture_relocations, self._show_candidates, root, blender_executable=blender)
+        self.run_background(
+            scan_button,
+            plan_referenced_texture_relocations,
+            self._show_candidates,
+            root,
+            blender_executable=blender,
+        )
 
     def _show_candidates(self, candidates: list[TextureRelocationCandidate]) -> None:
         self.candidates = candidates
@@ -82,10 +120,20 @@ class TextureRelocationTool(ToolWidget):
         for row, candidate in enumerate(candidates):
             self.table.setItem(row, 0, QTableWidgetItem(str(candidate.source)))
             self.table.setItem(row, 1, QTableWidgetItem(str(candidate.destination)))
-            self.table.setItem(row, 2, QTableWidgetItem(str(len(candidate.blend_files))))
-            self.table.setItem(row, 3, QTableWidgetItem("Safe to review" if candidate.safe else "Needs review"))
+            self.table.setItem(
+                row, 2, QTableWidgetItem(str(len(candidate.blend_files)))
+            )
+            self.table.setItem(
+                row,
+                3,
+                QTableWidgetItem(
+                    "Safe to review" if candidate.safe else "Needs review"
+                ),
+            )
         self.relocate.setEnabled(bool(candidates))
-        self.summary.setText(f"Found {len(candidates)} referenced texture(s) outside Assets/Textures.")
+        self.summary.setText(
+            f"Found {len(candidates)} referenced texture(s) outside Assets/Textures."
+        )
         self.set_status("Texture relocation scan complete.")
 
     def relocate_selected(self) -> None:
@@ -95,7 +143,9 @@ class TextureRelocationTool(ToolWidget):
             return
         candidate = self.candidates[row]
         if not candidate.safe:
-            self.show_error("This candidate is not marked safe for automatic relocation.")
+            self.show_error(
+                "This candidate is not marked safe for automatic relocation."
+            )
             return
         if not find_blender():
             self.show_error("Blender was not found on PATH.")
@@ -105,7 +155,15 @@ class TextureRelocationTool(ToolWidget):
             f"and repair {len(candidate.blend_files)} Blender file(s)?\n\n"
             "eli_lab will back up the affected .blend files before changing them."
         )
-        if QMessageBox.question(self, "Confirm texture relocation", message, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(
+                self,
+                "Confirm texture relocation",
+                message,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         self.run_background(
             self.relocate,

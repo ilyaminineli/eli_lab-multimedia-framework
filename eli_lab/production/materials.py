@@ -20,7 +20,12 @@ class MaterialRecord:
 
 def material_name_from_path(path: str | Path) -> str:
     stem = Path(path).stem
-    stem = re.sub(r"(?:[_ -]?(?:material|mat|basecolor|base_color|diffuse|albedo|normal|roughness|metallic|height|ao|opacity|alpha|mask))(?:[_ -]?\d{1,2}k)?$", "", stem, flags=re.I)
+    stem = re.sub(
+        r"(?:[_ -]?(?:material|mat|basecolor|base_color|diffuse|albedo|normal|roughness|metallic|height|ao|opacity|alpha|mask))(?:[_ -]?\d{1,2}k)?$",
+        "",
+        stem,
+        flags=re.I,
+    )
     return stem.strip(" _-") or Path(path).stem
 
 
@@ -28,18 +33,29 @@ def discover_material_records(root: str | Path) -> list[MaterialRecord]:
     root_path = Path(root).expanduser().resolve()
     records: dict[str, list[Path]] = {}
     for path in root_path.rglob("*.blend"):
-        if any(part.casefold() in {"materials", "material library", "material_library"} for part in path.parts):
-            records.setdefault(material_name_from_path(path).casefold(), []).append(path)
+        if any(
+            part.casefold() in {"materials", "material library", "material_library"}
+            for part in path.parts
+        ):
+            records.setdefault(material_name_from_path(path).casefold(), []).append(
+                path
+            )
     texture_sets = discover_texture_sets(root_path)
     by_name = {item.name.casefold(): item.name for item in texture_sets}
     result: list[MaterialRecord] = []
     for key, sources in sorted(records.items()):
-        result.append(MaterialRecord(
-            name=sources[0].stem,
-            source_files=tuple(sorted(p.relative_to(root_path) for p in sources)),
-            texture_sets=tuple(value for name, value in by_name.items() if key in name or name in key),
-            location=sources[0].relative_to(root_path).parent,
-        ))
+        result.append(
+            MaterialRecord(
+                name=sources[0].stem,
+                source_files=tuple(sorted(p.relative_to(root_path) for p in sources)),
+                texture_sets=tuple(
+                    value
+                    for name, value in by_name.items()
+                    if key in name or name in key
+                ),
+                location=sources[0].relative_to(root_path).parent,
+            )
+        )
     return result
 
 
@@ -62,14 +78,20 @@ def plan_texture_relocation(root: str | Path) -> list[tuple[Path, Path]]:
             pass
         destination = canonical / texture.name
         if destination.exists():
-            destination = canonical / texture.relative_to(root_path).with_suffix(texture.suffix)
+            destination = canonical / texture.relative_to(root_path).with_suffix(
+                texture.suffix
+            )
             # Preserve the source-relative context when a canonical filename exists.
             destination = canonical / "_relocated" / texture.relative_to(root_path)
-        plan.append((texture.relative_to(root_path), destination.relative_to(root_path)))
+        plan.append(
+            (texture.relative_to(root_path), destination.relative_to(root_path))
+        )
     return plan
 
 
-def apply_texture_relocation(root: str | Path, minimum_confidence: float = 1.0) -> list[tuple[Path, Path]]:
+def apply_texture_relocation(
+    root: str | Path, minimum_confidence: float = 1.0
+) -> list[tuple[Path, Path]]:
     """Move only files from a relocation plan, never overwrite existing data."""
     root_path = Path(root).expanduser().resolve()
     canonical = canonical_texture_directory(root_path)

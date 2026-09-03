@@ -1,7 +1,12 @@
 from pathlib import Path
 
 from eli_lab.project.documentation_presets import build_preset_markdown
-from eli_lab.project.migration import apply_migration, build_migration_plan, generate_metadata, scan_project
+from eli_lab.project.migration import (
+    apply_migration,
+    build_migration_plan,
+    generate_metadata,
+    scan_project,
+)
 from eli_lab.project.workspace import scan_workspace
 
 
@@ -23,7 +28,12 @@ def test_legacy_scene_root_blend_has_safe_migration_plan(tmp_path: Path) -> None
     source = tmp_path / "Scenes" / "Bedroom.blend"
     source.write_bytes(b"blend")
     plan = build_migration_plan(scan_project(tmp_path))
-    assert any(op.source == source and op.destination == tmp_path / "Scenes" / "Main Scenes" / "Bedroom" / "Bedroom.blend" for op in plan.operations)
+    assert any(
+        op.source == source
+        and op.destination
+        == tmp_path / "Scenes" / "Main Scenes" / "Bedroom" / "Bedroom.blend"
+        for op in plan.operations
+    )
 
 
 def test_apply_migration_never_overwrites(tmp_path: Path) -> None:

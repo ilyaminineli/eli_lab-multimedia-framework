@@ -24,7 +24,9 @@ def _completed_delta(task: Mapping[str, str]) -> int | None:
         status = task["status"]
         if not status.startswith("Completed on "):
             return None
-        completed = datetime.strptime(status.removeprefix("Completed on "), "%Y-%m-%d").date()
+        completed = datetime.strptime(
+            status.removeprefix("Completed on "), "%Y-%m-%d"
+        ).date()
         return (completed - due_date).days
     except (KeyError, TypeError, ValueError):
         return None

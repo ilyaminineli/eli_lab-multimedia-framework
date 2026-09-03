@@ -23,7 +23,9 @@ class RenameOperation:
         return self.source.resolve() != self.destination.resolve()
 
 
-def add_datetime(name: str, *, fmt: str = "%Y-%m-%d_%H-%M-%S", now: datetime | None = None) -> str:
+def add_datetime(
+    name: str, *, fmt: str = "%Y-%m-%d_%H-%M-%S", now: datetime | None = None
+) -> str:
     timestamp = (now or datetime.now()).strftime(fmt)
     return f"{timestamp}_{name}"
 
@@ -62,15 +64,22 @@ def change_extension(name: str, extension: str) -> str:
     return f"{Path(name).stem}{normalized}"
 
 
-def plan_renames(paths: list[str | Path], transform: Callable[[str], str]) -> list[RenameOperation]:
+def plan_renames(
+    paths: list[str | Path], transform: Callable[[str], str]
+) -> list[RenameOperation]:
     """Create rename operations without touching the filesystem."""
     return [
-        RenameOperation(source=Path(raw_path), destination=Path(raw_path).with_name(transform(Path(raw_path).name)))
+        RenameOperation(
+            source=Path(raw_path),
+            destination=Path(raw_path).with_name(transform(Path(raw_path).name)),
+        )
         for raw_path in paths
     ]
 
 
-def apply_renames(operations: list[RenameOperation], *, overwrite: bool = False) -> list[RenameOperation]:
+def apply_renames(
+    operations: list[RenameOperation], *, overwrite: bool = False
+) -> list[RenameOperation]:
     """Apply a validated rename plan.
 
     Existing destinations and rename cycles are rejected unless the caller

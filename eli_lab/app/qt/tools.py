@@ -1,4 +1,4 @@
-"""PySide6 implementations of the ELI LAB desktop tools."""
+"""PySide6 implementations of the eli_lab desktop tools."""
 
 from __future__ import annotations
 
@@ -59,10 +59,10 @@ from .common import ToolWidget, browse_directory, path_row
 
 class MessageMixin:
     def success(self, text: str) -> None:
-        QMessageBox.information(self, "ELI LAB", text)
+        QMessageBox.information(self, "eli_lab", text)
 
     def failure(self, text: str) -> None:
-        QMessageBox.critical(self, "ELI LAB", text)
+        QMessageBox.critical(self, "eli_lab", text)
 
 
 class TemplateTool(ToolWidget, MessageMixin):

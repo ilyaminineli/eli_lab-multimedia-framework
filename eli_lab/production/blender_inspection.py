@@ -18,7 +18,7 @@ class BlenderReference:
     status: str
 
 
-BLENDER_EXPORT_SCRIPT = r'''
+BLENDER_EXPORT_SCRIPT = r"""
 import bpy
 import json
 import os
@@ -55,7 +55,7 @@ for movie in getattr(bpy.data, 'movieclips', []):
         add(bpy.path.abspath(movie.filepath), 'movie')
 
 print(json.dumps({"blend_file": blend_path, "references": result}, ensure_ascii=False))
-'''
+"""
 
 
 def find_blender() -> str | None:
@@ -63,7 +63,11 @@ def find_blender() -> str | None:
     return shutil.which("blender") or shutil.which("blender.exe")
 
 
-def inspect_blend(blend_file: str | Path, project_root: str | Path, blender_executable: str | None = None) -> list[BlenderReference]:
+def inspect_blend(
+    blend_file: str | Path,
+    project_root: str | Path,
+    blender_executable: str | None = None,
+) -> list[BlenderReference]:
     """Inspect one .blend using Blender's own bpy data model.
 
     This is authoritative for paths stored in the .blend. It intentionally does
@@ -78,13 +82,23 @@ def inspect_blend(blend_file: str | Path, project_root: str | Path, blender_exec
         script_path = Path(temp_dir) / "inspect.py"
         script_path.write_text(BLENDER_EXPORT_SCRIPT, encoding="utf-8")
         process = subprocess.run(
-            [executable, "--background", str(blend), "--python", str(script_path), "--", str(root)],
+            [
+                executable,
+                "--background",
+                str(blend),
+                "--python",
+                str(script_path),
+                "--",
+                str(root),
+            ],
             capture_output=True,
             text=True,
             check=False,
         )
     if process.returncode != 0:
-        raise RuntimeError(f"Blender inspection failed for {blend}: {process.stderr.strip()[-2000:]}")
+        raise RuntimeError(
+            f"Blender inspection failed for {blend}: {process.stderr.strip()[-2000:]}"
+        )
     payload = None
     for line in reversed(process.stdout.splitlines()):
         line = line.strip()
@@ -104,7 +118,9 @@ def inspect_blend(blend_file: str | Path, project_root: str | Path, blender_exec
             pass
         references.append(
             BlenderReference(
-                blend_file=blend.relative_to(root) if blend.is_relative_to(root) else blend,
+                blend_file=(
+                    blend.relative_to(root) if blend.is_relative_to(root) else blend
+                ),
                 resource=resource,
                 kind=str(item.get("kind", "unknown")),
                 status="resolved" if item.get("exists") else "missing",
@@ -113,13 +129,17 @@ def inspect_blend(blend_file: str | Path, project_root: str | Path, blender_exec
     return references
 
 
-def inspect_project(project_root: str | Path, blender_executable: str | None = None) -> list[BlenderReference]:
+def inspect_project(
+    project_root: str | Path, blender_executable: str | None = None
+) -> list[BlenderReference]:
     """Inspect every .blend in a project and return authoritative references."""
     root = Path(project_root).expanduser().resolve()
     result: list[BlenderReference] = []
     for blend in sorted(root.rglob("*.blend")):
         try:
-            result.extend(inspect_blend(blend, root, blender_executable=blender_executable))
+            result.extend(
+                inspect_blend(blend, root, blender_executable=blender_executable)
+            )
         except Exception:
             # Keep project-wide audit resilient: one corrupt/unreadable file
             # should not prevent inspection of every other scene.

@@ -37,12 +37,30 @@ def discover_dependencies(root: str | Path) -> list[Dependency]:
             if texture_path.suffix.casefold() not in IMAGE_EXTENSIONS:
                 continue
             if texture_path.parent == blend.parent:
-                dependencies.append(Dependency(blend.relative_to(root_path), texture_path.relative_to(root_path), "nearby-resource", .9))
+                dependencies.append(
+                    Dependency(
+                        blend.relative_to(root_path),
+                        texture_path.relative_to(root_path),
+                        "nearby-resource",
+                        0.9,
+                    )
+                )
             elif stem_key and stem_key in _normal_key(texture_path):
-                dependencies.append(Dependency(blend.relative_to(root_path), texture_path.relative_to(root_path), "name-match", .6))
+                dependencies.append(
+                    Dependency(
+                        blend.relative_to(root_path),
+                        texture_path.relative_to(root_path),
+                        "name-match",
+                        0.6,
+                    )
+                )
     return dependencies
 
 
 def dependencies_for(root: str | Path, target: str | Path) -> list[Dependency]:
     target_path = Path(target)
-    return [item for item in discover_dependencies(root) if item.source == target_path or item.target == target_path]
+    return [
+        item
+        for item in discover_dependencies(root)
+        if item.source == target_path or item.target == target_path
+    ]

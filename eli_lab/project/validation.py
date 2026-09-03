@@ -22,15 +22,21 @@ class ValidationReport:
         return not any(issue.severity == "error" for issue in self.issues)
 
 
-def validate_project(root: str | Path, required_folders: tuple[str, ...] = ()) -> ValidationReport:
+def validate_project(
+    root: str | Path, required_folders: tuple[str, ...] = ()
+) -> ValidationReport:
     """Validate that a project root exists and contains required directories."""
     root_path = Path(root).expanduser().resolve()
     issues: list[ValidationIssue] = []
 
     if not root_path.exists():
-        return ValidationReport((ValidationIssue(root_path, "Project root does not exist"),))
+        return ValidationReport(
+            (ValidationIssue(root_path, "Project root does not exist"),)
+        )
     if not root_path.is_dir():
-        return ValidationReport((ValidationIssue(root_path, "Project root is not a directory"),))
+        return ValidationReport(
+            (ValidationIssue(root_path, "Project root is not a directory"),)
+        )
 
     for relative in required_folders:
         path = root_path / relative

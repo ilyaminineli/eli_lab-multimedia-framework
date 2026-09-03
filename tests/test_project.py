@@ -2,7 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from eli_lab.project import ProjectMetadata, ProjectTemplate, create_project_structure, load_metadata, save_metadata, validate_project
+from eli_lab.project import (
+    ProjectMetadata,
+    ProjectTemplate,
+    create_project_structure,
+    load_metadata,
+    save_metadata,
+    validate_project,
+)
 
 
 def test_project_structure_creation(tmp_path: Path) -> None:
@@ -23,7 +30,9 @@ def test_named_template_uses_semantic_asset_folders(tmp_path: Path) -> None:
         ),
     )
     assert (tmp_path / "Demo" / "assets" / "characters" / "Miku").is_dir()
-    assert (tmp_path / "Demo" / "assets" / "locations" / "Shrine" / "references").is_dir()
+    assert (
+        tmp_path / "Demo" / "assets" / "locations" / "Shrine" / "references"
+    ).is_dir()
     assert (tmp_path / "Demo" / "assets" / "models" / "Lantern" / "textures").is_dir()
     assert created
 

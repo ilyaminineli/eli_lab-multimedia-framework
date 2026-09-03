@@ -2,7 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from eli_lab.automation.renamer import add_autonumber, change_extension, convert_case, insert_text, plan_renames, replace_text
+from eli_lab.automation.renamer import (
+    add_autonumber,
+    change_extension,
+    convert_case,
+    insert_text,
+    plan_renames,
+    replace_text,
+)
 
 
 def test_filename_transformations() -> None:

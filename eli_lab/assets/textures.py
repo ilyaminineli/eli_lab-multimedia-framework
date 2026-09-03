@@ -8,7 +8,9 @@ from typing import Iterator
 
 from PIL import Image
 
-IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".tga", ".exr", ".hdr", ".bmp", ".gif", ".tiff", ".tif", ".png"})
+IMAGE_EXTENSIONS = frozenset(
+    {".jpg", ".jpeg", ".tga", ".exr", ".hdr", ".bmp", ".gif", ".tiff", ".tif", ".png"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,15 +30,25 @@ def iter_images(directory: str | Path, *, recursive: bool = False) -> Iterator[P
     if not root.is_dir():
         raise NotADirectoryError(root)
     paths = root.rglob("*") if recursive else root.glob("*")
-    yield from (path for path in sorted(paths) if path.is_file() and is_image_file(path))
+    yield from (
+        path for path in sorted(paths) if path.is_file() and is_image_file(path)
+    )
 
 
-def convert_texture(source: str | Path, *, output_dir: str | Path | None = None) -> ConversionResult:
+def convert_texture(
+    source: str | Path, *, output_dir: str | Path | None = None
+) -> ConversionResult:
     source_path = Path(source).expanduser().resolve()
-    if not source_path.is_file() or not is_image_file(source_path) or source_path.suffix.lower() == ".png":
+    if (
+        not source_path.is_file()
+        or not is_image_file(source_path)
+        or source_path.suffix.lower() == ".png"
+    ):
         return ConversionResult(source_path, None, False)
 
-    destination_dir = Path(output_dir).expanduser().resolve() if output_dir else source_path.parent
+    destination_dir = (
+        Path(output_dir).expanduser().resolve() if output_dir else source_path.parent
+    )
     destination = destination_dir / f"{source_path.stem}.png"
     destination_dir.mkdir(parents=True, exist_ok=True)
 
@@ -49,7 +61,9 @@ def convert_texture(source: str | Path, *, output_dir: str | Path | None = None)
     return ConversionResult(source_path, destination, True)
 
 
-def convert_directory(directory: str | Path, *, recursive: bool = False, replace_original: bool = False) -> list[ConversionResult]:
+def convert_directory(
+    directory: str | Path, *, recursive: bool = False, replace_original: bool = False
+) -> list[ConversionResult]:
     """Convert supported non-PNG images to PNG.
 
     Source files are preserved by default. Deleting originals is explicit.
@@ -62,5 +76,7 @@ def convert_directory(directory: str | Path, *, recursive: bool = False, replace
             try:
                 source.unlink()
             except OSError as exc:
-                results[-1] = ConversionResult(source, result.destination, False, str(exc))
+                results[-1] = ConversionResult(
+                    source, result.destination, False, str(exc)
+                )
     return results

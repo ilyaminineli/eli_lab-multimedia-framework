@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "eli-lab-multimedia-framework"
 version = "0.2.0.dev0"
-description = "Production and asset-management utilities for the ELI LAB multimedia pipeline."
+description = "Production and asset-management utilities for the eli_lab multimedia pipeline."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Ilya Minin (Eli)" }]

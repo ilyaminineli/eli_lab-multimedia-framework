@@ -58,7 +58,9 @@ def _unique_destination(root: Path, source: Path) -> Path:
     raise RuntimeError(f"Could not find a free relocation destination for {source}")
 
 
-def plan_referenced_texture_relocations(root: str | Path, blender_executable: str | None = None) -> list[TextureRelocationCandidate]:
+def plan_referenced_texture_relocations(
+    root: str | Path, blender_executable: str | None = None
+) -> list[TextureRelocationCandidate]:
     """Find textures that Blender actually references outside Assets/Textures."""
     root_path = Path(root).expanduser().resolve()
     canonical = canonical_texture_directory(root_path)
@@ -67,7 +69,11 @@ def plan_referenced_texture_relocations(root: str | Path, blender_executable: st
     for reference in references:
         if reference.kind != "image" or reference.status != "resolved":
             continue
-        resource = reference.resource if reference.resource.is_absolute() else root_path / reference.resource
+        resource = (
+            reference.resource
+            if reference.resource.is_absolute()
+            else root_path / reference.resource
+        )
         resource = resource.resolve()
         if resource.suffix.casefold() not in IMAGE_EXTENSIONS:
             continue
@@ -77,23 +83,32 @@ def plan_referenced_texture_relocations(root: str | Path, blender_executable: st
             by_resource.setdefault(resource, []).append(reference)
 
     candidates: list[TextureRelocationCandidate] = []
-    for source, refs in sorted(by_resource.items(), key=lambda item: str(item[0]).casefold()):
+    for source, refs in sorted(
+        by_resource.items(), key=lambda item: str(item[0]).casefold()
+    ):
         if not source.exists():
             continue
         destination = _unique_destination(root_path, source)
-        blend_files = tuple(sorted({reference.blend_file for reference in refs}, key=lambda item: str(item).casefold()))
-        candidates.append(TextureRelocationCandidate(
-            source=_relative(root_path, source),
-            destination=_relative(root_path, destination),
-            blend_files=blend_files,
-            references=tuple(refs),
-            reason=f"Referenced by {len(blend_files)} Blender file(s) but stored outside Assets/Textures.",
-            safe=not destination.exists() and bool(blend_files),
-        ))
+        blend_files = tuple(
+            sorted(
+                {reference.blend_file for reference in refs},
+                key=lambda item: str(item).casefold(),
+            )
+        )
+        candidates.append(
+            TextureRelocationCandidate(
+                source=_relative(root_path, source),
+                destination=_relative(root_path, destination),
+                blend_files=blend_files,
+                references=tuple(refs),
+                reason=f"Referenced by {len(blend_files)} Blender file(s) but stored outside Assets/Textures.",
+                safe=not destination.exists() and bool(blend_files),
+            )
+        )
     return candidates
 
 
-REPAIR_SCRIPT = r'''
+REPAIR_SCRIPT = r"""
 import bpy
 import os
 import sys
@@ -112,21 +127,34 @@ for image in bpy.data.images:
 if changed:
     bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
 print('ELI_LAB_REPAIRED=' + ('1' if changed else '0'))
-'''
+"""
 
 
-def _repair_blend(blend_file: Path, old_path: Path, new_path: Path, blender_executable: str) -> bool:
+def _repair_blend(
+    blend_file: Path, old_path: Path, new_path: Path, blender_executable: str
+) -> bool:
     with tempfile.TemporaryDirectory(prefix="eli_lab_texture_repair_") as temp_dir:
         script = Path(temp_dir) / "repair.py"
         script.write_text(REPAIR_SCRIPT, encoding="utf-8")
         process = subprocess.run(
-            [blender_executable, "--background", str(blend_file), "--python", str(script), "--", str(old_path), str(new_path)],
+            [
+                blender_executable,
+                "--background",
+                str(blend_file),
+                "--python",
+                str(script),
+                "--",
+                str(old_path),
+                str(new_path),
+            ],
             capture_output=True,
             text=True,
             check=False,
         )
     if process.returncode != 0:
-        raise RuntimeError(f"Blender repair failed for {blend_file}: {process.stderr.strip()[-2000:]}")
+        raise RuntimeError(
+            f"Blender repair failed for {blend_file}: {process.stderr.strip()[-2000:]}"
+        )
     return "ELI_LAB_REPAIRED=1" in process.stdout
 
 
@@ -135,7 +163,11 @@ def _backup_path(root: Path, blend: Path, stamp: str) -> Path:
     return root / ".eli_lab" / "backups" / stamp / relative
 
 
-def relocate_texture_candidate(root: str | Path, candidate: TextureRelocationCandidate, blender_executable: str | None = None) -> TextureRelocationResult:
+def relocate_texture_candidate(
+    root: str | Path,
+    candidate: TextureRelocationCandidate,
+    blender_executable: str | None = None,
+) -> TextureRelocationResult:
     """Apply one candidate transactionally, backing up affected .blend files first."""
     root_path = Path(root).expanduser().resolve()
     blender = blender_executable or find_blender()
@@ -167,20 +199,37 @@ def relocate_texture_candidate(root: str | Path, candidate: TextureRelocationCan
             if _repair_blend(blend, source, destination, blender):
                 repaired.append(blend_rel)
         if set(repaired) != set(candidate.blend_files):
-            raise RuntimeError("Not every referencing Blender file confirmed the texture reference; the operation was rolled back.")
+            raise RuntimeError(
+                "Not every referencing Blender file confirmed the texture reference; the operation was rolled back."
+            )
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(source), str(destination))
         moved = True
         manifest = backup_root / "relocation.json"
-        manifest.write_text(json.dumps({
-            "operation": "texture_relocation",
-            "source": str(candidate.source),
-            "destination": str(candidate.destination),
-            "blend_files": [str(path) for path in candidate.blend_files],
-            "timestamp": stamp,
-        }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        record_history(root_path, "texture_relocation", str(candidate.source), f"Moved to {candidate.destination}; repaired {len(repaired)} Blender file(s); backup={backup_root}")
-        return TextureRelocationResult(candidate.source, candidate.destination, tuple(repaired), backup_root)
+        manifest.write_text(
+            json.dumps(
+                {
+                    "operation": "texture_relocation",
+                    "source": str(candidate.source),
+                    "destination": str(candidate.destination),
+                    "blend_files": [str(path) for path in candidate.blend_files],
+                    "timestamp": stamp,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        record_history(
+            root_path,
+            "texture_relocation",
+            str(candidate.source),
+            f"Moved to {candidate.destination}; repaired {len(repaired)} Blender file(s); backup={backup_root}",
+        )
+        return TextureRelocationResult(
+            candidate.source, candidate.destination, tuple(repaired), backup_root
+        )
     except Exception:
         for blend, backup in reversed(backups):
             if backup.exists():

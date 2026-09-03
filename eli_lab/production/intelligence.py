@@ -33,7 +33,15 @@ class Dependency:
 
 
 CHANNEL_PATTERNS = {
-    "base_color": ("basecolor", "base_color", "diffuse", "albedo", "color", "colour", "_col"),
+    "base_color": (
+        "basecolor",
+        "base_color",
+        "diffuse",
+        "albedo",
+        "color",
+        "colour",
+        "_col",
+    ),
     "normal": ("normal", "nor_gl", "nor", "nrm"),
     "roughness": ("roughness", "rough", "smoothness", "smooth"),
     "metallic": ("metallic", "metalness", "metal"),
@@ -58,14 +66,24 @@ def _resolution_for(stem: str) -> str | None:
 
 def inspect_texture(path: str | Path) -> TextureInfo:
     source = Path(path)
-    return TextureInfo(source, source.stem, _channel_for(source.stem), _resolution_for(source.stem))
+    return TextureInfo(
+        source, source.stem, _channel_for(source.stem), _resolution_for(source.stem)
+    )
 
 
 def group_texture_set(paths: list[str | Path]) -> TextureSet:
     infos = tuple(inspect_texture(path) for path in paths)
     channels = {info.channel for info in infos if info.channel}
     name_source = infos[0].stem if infos else "Texture Set"
-    name = re.sub(r"(?:[_ -]?)(?:basecolor|base_color|diffuse|albedo|color|colour|normal|roughness|rough|metallic|metalness|height|displacement|disp|bump|ao|opacity|alpha|mask)(?:[_ -]?\d{1,2}k)?$", "", name_source, flags=re.I).strip(" _-") or name_source
+    name = (
+        re.sub(
+            r"(?:[_ -]?)(?:basecolor|base_color|diffuse|albedo|color|colour|normal|roughness|rough|metallic|metalness|height|displacement|disp|bump|ao|opacity|alpha|mask)(?:[_ -]?\d{1,2}k)?$",
+            "",
+            name_source,
+            flags=re.I,
+        ).strip(" _-")
+        or name_source
+    )
     expected = {"base_color", "normal", "roughness"}
     return TextureSet(name, infos, tuple(sorted(expected - channels)))
 
@@ -76,7 +94,16 @@ def discover_texture_sets(root: str | Path) -> list[TextureSet]:
     for path in root_path.rglob("*"):
         if path.is_file() and path.suffix.casefold() in IMAGE_EXTENSIONS:
             info = inspect_texture(path)
-            key = re.sub(r"(?:[_ -]?)(?:basecolor|base_color|diffuse|albedo|color|colour|normal|roughness|rough|metallic|metalness|height|displacement|disp|bump|ao|opacity|alpha|mask)(?:[_ -]?\d{1,2}k)?$", "", info.stem, flags=re.I).strip(" _-").casefold()
+            key = (
+                re.sub(
+                    r"(?:[_ -]?)(?:basecolor|base_color|diffuse|albedo|color|colour|normal|roughness|rough|metallic|metalness|height|displacement|disp|bump|ao|opacity|alpha|mask)(?:[_ -]?\d{1,2}k)?$",
+                    "",
+                    info.stem,
+                    flags=re.I,
+                )
+                .strip(" _-")
+                .casefold()
+            )
             groups.setdefault(key or info.stem.casefold(), []).append(path)
     return [group_texture_set(paths) for paths in groups.values()]
 
@@ -88,5 +115,11 @@ def discover_dependencies(root: str | Path) -> list[Dependency]:
     for blend in root_path.rglob("*.blend"):
         for texture in blend.parent.rglob("*"):
             if texture.is_file() and texture.suffix.casefold() in IMAGE_EXTENSIONS:
-                dependencies.append(Dependency(blend.relative_to(root_path), texture.relative_to(root_path), "nearby-texture"))
+                dependencies.append(
+                    Dependency(
+                        blend.relative_to(root_path),
+                        texture.relative_to(root_path),
+                        "nearby-texture",
+                    )
+                )
     return dependencies

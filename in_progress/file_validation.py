@@ -3,4 +3,4 @@ from eli_lab.app.qt.tools import FileValidationTool, run_standalone
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_standalone(FileValidationTool, "ELI LAB — File Validation"))
+    raise SystemExit(run_standalone(FileValidationTool, "eli_lab — File Validation"))
